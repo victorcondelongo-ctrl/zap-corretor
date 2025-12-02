@@ -80,29 +80,35 @@ export interface ZapTenant {
  * @throws Error if no user is logged in or profile is not found.
  */
 export async function getCurrentProfile(): Promise<ZapProfile> {
-  const { data: { user } } = await supabase.auth.getUser();
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    throw new Error("User not authenticated.");
+    if (!user) {
+      throw new Error("User not authenticated.");
+    }
+
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    if (error) {
+      console.error("Supabase Profile Fetch Error:", error);
+      throw new Error(`Failed to fetch profile: ${error.message}`);
+    }
+
+    // Ensure tenant_id is correctly typed as string | null
+    const typedProfile: ZapProfile = {
+      ...profile,
+      tenant_id: profile.tenant_id as string | null,
+    };
+
+    return typedProfile;
+  } catch (e) {
+    console.error("Error in getCurrentProfile:", e);
+    throw e;
   }
-
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  if (error) {
-    throw new Error(`Failed to fetch profile: ${error.message}`);
-  }
-
-  // Ensure tenant_id is correctly typed as string | null
-  const typedProfile: ZapProfile = {
-    ...profile,
-    tenant_id: profile.tenant_id as string | null,
-  };
-
-  return typedProfile;
 }
 
 /**
