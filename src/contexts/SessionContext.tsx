@@ -26,68 +26,84 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async () => {
+    console.log("[SessionContext] fetchProfile() start");
     try {
       const p = await getCurrentProfile();
+      console.log("[SessionContext] fetchProfile() success:", p);
       setProfile(p);
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      console.error("[SessionContext] fetchProfile() ERROR:", error);
       setProfile(null);
     }
   }, []);
 
   const refreshProfile = useCallback(async () => {
+    console.log("[SessionContext] refreshProfile() called. user =", user);
     if (user) {
       await fetchProfile();
     }
   }, [user, fetchProfile]);
 
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        const currentUser = session?.user ?? null;
+    const init = async () => {
+      console.log("[SessionContext] init() start");
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        console.log("[SessionContext] getSession() result:", { data, error });
+
+        if (cancelled) return;
+
+        const currentUser = data?.session?.user ?? null;
         setUser(currentUser);
+        console.log("[SessionContext] currentUser =", currentUser);
 
         if (currentUser) {
           await fetchProfile();
         } else {
           setProfile(null);
         }
-
-        // The INITIAL_SESSION event is fired only once when the client connects.
-        // It signifies that the initial authentication check is complete.
-        // We can now safely set loading to false.
-        if (event === 'INITIAL_SESSION') {
+      } catch (err) {
+        console.error("[SessionContext] init() ERROR:", err);
+        setUser(null);
+        setProfile(null);
+      } finally {
+        if (!cancelled) {
+          console.log("[SessionContext] init() finished, setLoading(false)");
           setLoading(false);
+        }
+      }
+    };
+
+    init();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("[SessionContext] onAuthStateChange:", { event, session });
+        if (cancelled) return;
+
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        console.log("[SessionContext] onAuthStateChange user =", currentUser);
+
+        if (currentUser) {
+          await fetchProfile();
+        } else {
+          setProfile(null);
         }
       }
     );
 
-    // If onAuthStateChange doesn't fire an initial session for some reason,
-    // we need a fallback to stop the loading. Let's check manually.
-    const checkInitialUser = async () => {
-        const { data: { user: initialUser } } = await supabase.auth.getUser();
-        if (loading) { // Only set loading if it's still true
-            if (initialUser) {
-                setUser(initialUser);
-                await fetchProfile();
-            }
-            setLoading(false);
-        }
-    };
-    
-    // Give onAuthStateChange a moment to fire, then check manually.
-    const timer = setTimeout(() => {
-        checkInitialUser();
-    }, 500);
-
-
     return () => {
+      console.log("[SessionContext] cleanup");
+      cancelled = true;
       subscription.unsubscribe();
-      clearTimeout(timer);
     };
   }, [fetchProfile]);
+
+  console.log("[SessionContext] render:", { user, profile, loading });
 
   return (
     <SessionContext.Provider value={{ user, profile, loading, refreshProfile }}>

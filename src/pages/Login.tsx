@@ -17,6 +17,8 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const { user, loading: sessionLoading } = useSession();
 
+  console.log("[Login] render:", { sessionLoading, hasUser: !!user });
+
   // Redirect if already logged in
   useEffect(() => {
     if (!sessionLoading && user) {

@@ -15,6 +15,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { user, profile, loading } = useSession();
 
+  console.log("[ProtectedRoute] render:", {
+    allowedRoles,
+    loading,
+    hasUser: !!user,
+    role: profile?.role,
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
