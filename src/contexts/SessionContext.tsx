@@ -23,8 +23,9 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
   const [profile, setProfile] = useState<ZapProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Mantemos fetchProfile, mas ele não será chamado internamente por enquanto
   const fetchProfile = useCallback(async () => {
-    console.log("[SessionContext] fetchProfile() start");
+    console.log("[SessionContext] fetchProfile() start (BYPASSED)");
     try {
       const p = await getCurrentProfile();
       console.log("[SessionContext] fetchProfile() success", p);
@@ -37,6 +38,7 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
 
   const refreshProfile = useCallback(async () => {
     if (!user) return;
+    // Esta função ainda pode ser chamada externamente, mas não afeta o carregamento inicial
     await fetchProfile();
   }, [user, fetchProfile]);
 
@@ -44,7 +46,7 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
     let isMounted = true;
 
     const loadInitial = async () => {
-      console.log("[SessionContext] loadInitial() start");
+      console.log("[SessionContext] loadInitial() start (BYPASSING PROFILE LOAD)");
       setLoading(true);
       try {
         // 1. Tenta obter o usuário atual
@@ -58,13 +60,10 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
         const currentUser = data?.user ?? null;
         console.log("[SessionContext] loadInitial() user =", currentUser);
         setUser(currentUser);
+        
+        // BYPASS: Não chama fetchProfile, define profile como null
+        setProfile(null); 
 
-        // 2. Se houver usuário, tenta buscar o perfil
-        if (currentUser) {
-          await fetchProfile();
-        } else {
-          setProfile(null);
-        }
       } finally {
         // 3. SEMPRE finaliza o loading
         if (isMounted) {
@@ -87,13 +86,8 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
-        if (currentUser) {
-          // Se logou, busca o perfil
-          await fetchProfile();
-        } else {
-          // Se deslogou, limpa o perfil
-          setProfile(null);
-        }
+        // BYPASS: Não chama fetchProfile, define profile como null
+        setProfile(null);
       }
     );
 
@@ -101,7 +95,7 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, [fetchProfile]); // fetchProfile está aqui apenas para satisfazer o linter, mas não é usado no fluxo principal
 
   console.log("[SessionContext] render:", { user, profile, loading });
 
