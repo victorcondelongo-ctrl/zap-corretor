@@ -25,7 +25,7 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
   const [profile, setProfile] = useState<ZapProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (currentUser: User) => {
+  const fetchProfile = useCallback(async () => {
     try {
       const p = await getCurrentProfile();
       setProfile(p);
@@ -37,55 +37,55 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
 
   const refreshProfile = useCallback(async () => {
     if (user) {
-      await fetchProfile(user);
+      await fetchProfile();
     }
   }, [user, fetchProfile]);
 
   useEffect(() => {
-    let isMounted = true;
+    setLoading(true);
 
-    const initializeSession = async () => {
-      // 1. Get initial user session
-      const { data: { user: initialUser } } = await supabase.auth.getUser();
-      
-      if (!isMounted) return;
-
-      setUser(initialUser);
-
-      // 2. If user exists, fetch profile
-      if (initialUser) {
-        await fetchProfile(initialUser);
-      }
-
-      // 3. Stop loading state
-      if (isMounted) {
-        setLoading(false);
-      }
-    };
-
-    initializeSession();
-
-    // 4. Set up real-time auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         const currentUser = session?.user ?? null;
-        
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-            setUser(currentUser);
-            if (currentUser) {
-                await fetchProfile(currentUser);
-            }
-        } else if (event === 'SIGNED_OUT') {
-            setUser(null);
-            setProfile(null);
+        setUser(currentUser);
+
+        if (currentUser) {
+          await fetchProfile();
+        } else {
+          setProfile(null);
         }
-        // Note: We don't set loading=false here, as it was set in initializeSession
-      },
+
+        // The INITIAL_SESSION event is fired only once when the client connects.
+        // It signifies that the initial authentication check is complete.
+        // We can now safely set loading to false.
+        if (event === 'INITIAL_SESSION') {
+          setLoading(false);
+        }
+      }
     );
 
+    // If onAuthStateChange doesn't fire an initial session for some reason,
+    // we need a fallback to stop the loading. Let's check manually.
+    const checkInitialUser = async () => {
+        const { data: { user: initialUser } } = await supabase.auth.getUser();
+        if (loading) { // Only set loading if it's still true
+            if (initialUser) {
+                setUser(initialUser);
+                await fetchProfile();
+            }
+            setLoading(false);
+        }
+    };
+    
+    // Give onAuthStateChange a moment to fire, then check manually.
+    const timer = setTimeout(() => {
+        checkInitialUser();
+    }, 500);
+
+
     return () => {
-      isMounted = false;
       subscription.unsubscribe();
+      clearTimeout(timer);
     };
   }, [fetchProfile]);
 
