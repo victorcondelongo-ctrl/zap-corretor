@@ -33,8 +33,12 @@ export default {
           foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "0 84.2% 60.2%",
+          foreground: "210 40% 98%",
+        },
+        success: {
+          DEFAULT: "142.1 76.2% 36.3%",
+          foreground: "210 40% 98%",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
