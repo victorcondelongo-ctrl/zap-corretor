@@ -25,7 +25,7 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
   const [profile, setProfile] = useState<ZapProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (currentUser: User) => {
+  const fetchProfile = useCallback(async () => {
     try {
       const p = await getCurrentProfile();
       setProfile(p);
@@ -37,18 +37,18 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
 
   const refreshProfile = useCallback(async () => {
     if (user) {
-      await fetchProfile(user);
+      await fetchProfile();
     }
   }, [user, fetchProfile]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
         if (currentUser) {
-          fetchProfile(currentUser);
+          await fetchProfile();
         } else {
           setProfile(null);
         }
@@ -57,13 +57,12 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
     );
 
     // Initial check
-    supabase.auth.getUser().then(({ data: { user: initialUser } }) => {
+    supabase.auth.getUser().then(async ({ data: { user: initialUser } }) => {
       setUser(initialUser);
       if (initialUser) {
-        fetchProfile(initialUser).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
+        await fetchProfile();
       }
+      setLoading(false);
     });
 
     return () => {
