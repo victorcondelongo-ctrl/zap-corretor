@@ -28,8 +28,10 @@ const Login: React.FC = () => {
             navigate("/admin/dashboard", { replace: true });
           } else if (profile.role === "AGENT") {
             navigate("/agent/leads", { replace: true });
+          } else if (profile.role === "SUPERADMIN") {
+            navigate("/superadmin/dashboard", { replace: true });
           } else {
-            // Handle SUPERADMIN or other roles later
+            // Handle unknown roles
             navigate("/", { replace: true });
           }
         } catch (e) {
@@ -66,8 +68,10 @@ const Login: React.FC = () => {
         navigate("/admin/dashboard", { replace: true });
       } else if (profile.role === "AGENT") {
         navigate("/agent/leads", { replace: true });
+      } else if (profile.role === "SUPERADMIN") {
+        navigate("/superadmin/dashboard", { replace: true });
       } else {
-        // TODO: Handle SUPERADMIN redirection
+        // Handle unknown roles
         navigate("/", { replace: true });
       }
     } catch (error) {
