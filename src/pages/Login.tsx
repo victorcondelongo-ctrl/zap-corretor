@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
-import { getCurrentProfile } from "@/services/zapCorretor";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,36 +14,36 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { user, loading: sessionLoading } = useSession();
+  const { user, profile, loading: sessionLoading } = useSession(); // Adicionado 'profile'
 
-  console.log("[Login] render:", { sessionLoading, hasUser: !!user });
+  console.log("[Login] render:", { sessionLoading, hasUser: !!user, hasProfile: !!profile });
 
-  // Redirect if already logged in
+  // Redirect if already logged in AND profile is loaded
   useEffect(() => {
-    if (!sessionLoading && user) {
-      // We need to fetch the profile to determine the correct dashboard
-      const checkRoleAndRedirect = async () => {
-        try {
-          const profile = await getCurrentProfile();
-          if (profile.role === "ADMIN_TENANT") {
-            navigate("/admin/dashboard", { replace: true });
-          } else if (profile.role === "AGENT") {
-            navigate("/agent/leads", { replace: true });
-          } else if (profile.role === "SUPERADMIN") {
-            navigate("/superadmin/dashboard", { replace: true });
-          } else {
-            // Handle unknown roles
-            navigate("/", { replace: true });
-          }
-        } catch (e) {
-          console.error("Error checking profile during login redirect:", e);
-          // If profile check fails, redirect to home
-          navigate("/", { replace: true });
-        }
-      };
-      checkRoleAndRedirect();
+    if (!sessionLoading && user && profile) {
+      // Profile is loaded, determine the correct dashboard
+      let redirectPath = "/";
+      
+      switch (profile.role) {
+        case "SUPERADMIN":
+          redirectPath = "/superadmin/dashboard";
+          break;
+        case "ADMIN_TENANT":
+          redirectPath = "/admin/dashboard";
+          break;
+        case "AGENT":
+          redirectPath = "/agent/leads";
+          break;
+      }
+      
+      console.log(`[Login] Redirecting to ${redirectPath} (Role: ${profile.role})`);
+      navigate(redirectPath, { replace: true });
     }
-  }, [user, sessionLoading, navigate]);
+    
+    // If loading is false, user exists, but profile is null, we stay on the login page 
+    // or let the ProtectedRoute handle the missing profile error if they navigate away.
+    // For now, we just wait for the profile to resolve.
+  }, [user, profile, sessionLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,20 +61,12 @@ const Login: React.FC = () => {
         return;
       }
 
-      // Manually fetch profile to determine immediate redirection path
-      const profile = await getCurrentProfile();
-      showSuccess(`Bem-vindo(a), ${profile.full_name}!`);
+      // Login successful. The SessionContext listener will now fetch the profile
+      // and trigger the useEffect above for redirection.
+      showSuccess(`Login bem-sucedido. Redirecionando...`);
+      
+      // We don't navigate here; we let the useEffect handle it once the profile is loaded.
 
-      if (profile.role === "ADMIN_TENANT") {
-        navigate("/admin/dashboard", { replace: true });
-      } else if (profile.role === "AGENT") {
-        navigate("/agent/leads", { replace: true });
-      } else if (profile.role === "SUPERADMIN") {
-        navigate("/superadmin/dashboard", { replace: true });
-      } else {
-        // Handle unknown roles
-        navigate("/", { replace: true });
-      }
     } catch (error) {
       console.error("Login error:", error);
       showError(
@@ -89,7 +80,7 @@ const Login: React.FC = () => {
     }
   };
 
-  if (sessionLoading || user) {
+  if (sessionLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -97,7 +88,22 @@ const Login: React.FC = () => {
       </div>
     );
   }
+  
+  // If user exists but profile is null, we show a loading state or wait, 
+  // but since we are on the login page, we should wait for the profile to load 
+  // before redirecting, which is handled by the useEffect.
+  // If the user is logged in but has no profile, they will be stuck here until the profile loads (or fails).
+  if (user && !profile) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="ml-2">Carregando perfil...</p>
+        </div>
+      );
+  }
 
+  // If user and profile exist, the useEffect already redirected.
+  // If user is null, show the login form.
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
       <Card className="w-full max-w-md">
