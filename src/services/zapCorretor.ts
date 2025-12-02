@@ -95,7 +95,17 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
 
     if (error) {
       console.error("Supabase Profile Fetch Error:", error);
+      // Supabase .single() returns error if 0 rows found, or if RLS denies access.
+      // We check if the error is due to no rows found (code 'PGRST116') or a genuine error.
+      if (error.code === 'PGRST116') {
+        throw new Error(`Profile not found for user ID: ${user.id}. Please ensure the user has a corresponding entry in the 'profiles' table.`);
+      }
       throw new Error(`Failed to fetch profile: ${error.message}`);
+    }
+    
+    if (!profile) {
+        // Should be caught by the error check above, but as a safeguard:
+        throw new Error(`Profile data is null for user ID: ${user.id}.`);
     }
 
     // Ensure tenant_id is correctly typed as string | null
