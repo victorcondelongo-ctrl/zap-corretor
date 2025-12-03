@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Users, Target, CheckCircle, Clock, XCircle, DollarSign } from "lucide-react";
 import { showError } from "@/utils/toast";
 import { Separator } from "@/components/ui/separator";
+import WhatsAppConnectionCard from "@/components/agent/WhatsAppConnectionCard"; // Import new component
 
 // --- Helper Components ---
 
@@ -110,12 +111,19 @@ const AgentDashboardPage = () => {
       <h1 className="text-3xl font-bold">Meu Dashboard</h1>
       <p className="text-muted-foreground">Visão geral dos seus leads e performance.</p>
 
-      {/* Linha de Cards Principais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard title="Total de Leads" value={totalLeads} icon={<Users className="h-4 w-4 text-muted-foreground" />} />
-        <MetricCard title="Qualificados" value={counts.qualified || 0} icon={<Target className="h-4 w-4 text-green-500" />} />
-        <MetricCard title="Vendas no Mês" value={totalSales} icon={<DollarSign className="h-4 w-4 text-primary" />} />
-        <MetricCard title="Em Atendimento" value={counts.in_progress || 0} icon={<Clock className="h-4 w-4 text-yellow-500" />} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* WhatsApp Connection Card (New) */}
+        <div className="lg:col-span-1">
+            <WhatsAppConnectionCard />
+        </div>
+        
+        {/* Metrics */}
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <MetricCard title="Total de Leads" value={totalLeads} icon={<Users className="h-4 w-4 text-muted-foreground" />} />
+            <MetricCard title="Qualificados" value={counts.qualified || 0} icon={<Target className="h-4 w-4 text-green-500" />} />
+            <MetricCard title="Vendas no Mês" value={totalSales} icon={<DollarSign className="h-4 w-4 text-primary" />} />
+            <MetricCard title="Em Atendimento" value={counts.in_progress || 0} icon={<Clock className="h-4 w-4 text-yellow-500" />} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

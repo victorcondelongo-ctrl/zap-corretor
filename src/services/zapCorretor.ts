@@ -135,6 +135,23 @@ export interface ZapSupportTicket {
     created_at: string;
 }
 
+// UAZAPI TYPES
+export type UazapiStatus = "connected" | "disconnected" | "waiting_qr" | "waiting_pair" | "no_instance" | "error" | "unknown" | "created";
+
+export interface UazapiStatusResponse {
+    hasInstance: boolean;
+    status: UazapiStatus;
+    raw: any;
+    updated_at?: string;
+}
+
+export interface UazapiConnectResponse {
+    qrcode_base64?: string;
+    pairingCode?: string;
+    message?: string;
+}
+
+
 // =================================================================
 // 2. GENERIC CONTEXT FUNCTIONS
 // =================================================================
@@ -619,7 +636,79 @@ export const agentService = {
       console.log(`Exporting leads for agent ${profile.id} with status: ${status}`);
       // Simulate export success
       return;
-  }
+  },
+  
+  // --- UAZAPI INTEGRATION ---
+  
+  /**
+   * Calls the Edge Function to get the current instance status.
+   */
+  async getInstanceStatus(): Promise<UazapiStatusResponse> {
+    const { data, error } = await supabase.functions.invoke("uazapi-manager", {
+      method: "GET",
+      path: "/instance/status",
+    });
+
+    if (error) {
+      throw new Error(`Failed to fetch instance status: ${error.message}`);
+    }
+    
+    if (data && data.error) {
+        throw new Error(data.error);
+    }
+
+    return data as UazapiStatusResponse;
+  },
+  
+  /**
+   * Calls the Edge Function to create a new Uazapi instance.
+   */
+  async createInstance(): Promise<void> {
+    const { error } = await supabase.functions.invoke("uazapi-manager", {
+      method: "POST",
+      path: "/instance/init",
+    });
+
+    if (error) {
+      throw new Error(`Failed to create instance: ${error.message}`);
+    }
+    
+    // The Edge Function handles saving the token and initial status
+  },
+  
+  /**
+   * Calls the Edge Function to connect the instance (returns QR or Pair Code).
+   */
+  async connectInstance(): Promise<UazapiConnectResponse> {
+    const { data, error } = await supabase.functions.invoke("uazapi-manager", {
+      method: "POST",
+      path: "/instance/connect",
+    });
+
+    if (error) {
+      throw new Error(`Failed to initiate connection: ${error.message}`);
+    }
+    
+    if (data && data.error) {
+        throw new Error(data.error);
+    }
+
+    return data as UazapiConnectResponse;
+  },
+  
+  /**
+   * Calls the Edge Function to disconnect the instance.
+   */
+  async disconnectInstance(): Promise<void> {
+    const { error } = await supabase.functions.invoke("uazapi-manager", {
+      method: "POST",
+      path: "/instance/disconnect",
+    });
+
+    if (error) {
+      throw new Error(`Failed to disconnect instance: ${error.message}`);
+    }
+  },
 };
 
 // =================================================================
@@ -663,8 +752,6 @@ export const superadminService = {
   async createTenantAndAdmin(params: CreateTenantAndAdminParams): Promise<ZapTenant> {
     await requireRole(["SUPERADMIN"]);
 
-    // NOTE: This function is currently unused as the signup flow handles tenant creation via trigger.
-    // Keeping it for Superadmin manual creation flow later.
     const { data, error } = await supabase.functions.invoke("create-tenant-and-admin", {
       body: {
         tenant_name: params.tenantName,

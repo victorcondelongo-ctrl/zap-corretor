@@ -12,7 +12,7 @@ import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
 import AdminBlockedPhonesPage from "./pages/admin/AdminBlockedPhonesPage";
 import AdminReportsPage from "./pages/admin/AdminReportsPage";
 import Login from "./pages/Login";
-import { SessionContextProvider } from "./contexts/SessionContext";
+import { SessionContextProvider, useSession } from "./contexts/SessionContext";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
 import MyLeadsPage from "./pages/agent/MyLeadsPage";
 import AgentSettingsPage from "./pages/agent/AgentSettingsPage";
@@ -31,24 +31,29 @@ import SuperadminSupportPage from "./pages/superadmin/SuperadminSupportPage"; //
 const queryClient = new QueryClient();
 
 // Layout simples para o Agente (com navegação atualizada)
-const AgentLayout = () => (
-  <div className="min-h-screen bg-background">
-    <header className="p-4 border-b shadow-sm">
-      <nav className="flex justify-between items-center max-w-7xl mx-auto">
-        <h1 className="text-xl font-bold text-primary">ZapCorretor Agente</h1>
-        <div className="space-x-4">
-          <Link to="/agent/dashboard" className="text-sm font-medium hover:text-primary">Dashboard</Link>
-          <Link to="/agent/leads" className="text-sm font-medium hover:text-primary">Meus Leads</Link>
-          <Link to="/agent/settings" className="text-sm font-medium hover:text-primary">Configurações</Link>
-          <Link to="/agent/profile" className="text-sm font-medium hover:text-primary">Perfil</Link>
-        </div>
-      </nav>
-    </header>
-    <main className="max-w-7xl mx-auto pb-10">
-      <Outlet />
-    </main>
-  </div>
-);
+const AgentLayout = () => {
+  const { profile } = useSession();
+  const agentName = profile?.full_name || "Corretor";
+  
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="p-4 border-b shadow-sm">
+        <nav className="flex justify-between items-center max-w-7xl mx-auto">
+          <h1 className="text-xl font-bold text-primary">ZapCorretor - Agente ({agentName})</h1>
+          <div className="space-x-4">
+            <Link to="/agent/dashboard" className="text-sm font-medium hover:text-primary">Dashboard</Link>
+            <Link to="/agent/leads" className="text-sm font-medium hover:text-primary">Meus Leads</Link>
+            <Link to="/agent/settings" className="text-sm font-medium hover:text-primary">Configurações</Link>
+            <Link to="/agent/profile" className="text-sm font-medium hover:text-primary">Perfil</Link>
+          </div>
+        </nav>
+      </header>
+      <main className="max-w-7xl mx-auto pb-10">
+        <Outlet />
+      </main>
+    </div>
+  );
+};
 
 
 const App = () => (
