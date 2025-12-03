@@ -19,6 +19,7 @@ import PasswordChecklist from "./PasswordChecklist";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card"; // Added imports
 
 // --- Constants ---
 const PRICE_INDIVIDUAL = 297;
@@ -39,8 +40,8 @@ const nameValidator = z.string().refine(name => {
 
 const phoneValidator = z.string()
     .transform(val => val.replace(/\D/g, ''))
-    .refine(val => val.length === 10 || val.length === 11, "Informe um telefone válido.");
-
+    .refine(val => val.length === 10 || val.length === 11, "Informe um telefone válido.")
+    .or(z.literal("")); // Allow empty string if not required, though form requires it
 
 const formSchema = z.object({
   fullName: nameValidator,

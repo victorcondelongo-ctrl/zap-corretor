@@ -15,6 +15,7 @@ export interface ZapProfile {
   role: ZapRole;
   tenant_id: string | null;
   is_active: boolean;
+  created_at: string; // Adicionado created_at
   // Fields related to Uazapi instance stored in profiles
   instance_name: string | null;
   instance_created_at: string | null;
@@ -71,6 +72,34 @@ export interface ZapDashboardStats {
   total_sales: number;
   sales_by_agent: ZapSalesByAgent[];
 }
+
+// --- RPC Return Types ---
+
+interface LeadWithMessagesRpcResult {
+    lead_data: ZapLead;
+    messages_data: ZapMessage[];
+}
+
+interface DashboardStatsRpcResult {
+    total_leads: number;
+    leads_new: number;
+    leads_in_progress: number;
+    leads_qualified: number;
+    leads_abandoned: number;
+    leads_sold: number;
+    total_sales: number;
+    sales_by_agent: ZapSalesByAgent[];
+}
+
+interface PlatformStatsRpcResult {
+    total_tenants: number;
+    total_agents: number;
+    total_leads: number;
+    total_sales: number;
+}
+
+// --- End RPC Return Types ---
+
 
 export interface ZapTenant {
 // ... (rest of ZapTenant remains the same)
@@ -217,6 +246,7 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
       instance_created_at: profile.instance_created_at as string | null,
       instance_id: profile.instance_id as string | null,
       instance_token: profile.instance_token as string | null,
+      created_at: profile.created_at as string, // Ensure created_at is present
     };
 
     console.log("[getCurrentProfile] success, returning profile");
@@ -306,6 +336,39 @@ export const adminTenantService = {
 
     return data as ZapProfile;
   },
+  
+  /**
+   * Deletes an agent (user and profile) using the user-management Edge Function.
+   */
+  async deleteAgent(agentId: string): Promise<void> {
+    const profile = await requireRole(["ADMIN_TENANT"]);
+    
+    // Before deleting, ensure the agent belongs to the current tenant (RLS check)
+    const { data: agentProfile, error: fetchError } = await supabase
+        .from("profiles")
+        .select("tenant_id, role")
+        .eq("id", agentId)
+        .single();
+        
+    if (fetchError || !agentProfile || agentProfile.tenant_id !== profile.tenant_id || agentProfile.role !== 'AGENT') {
+        throw new Error("Permission denied or agent not found in this tenant.");
+    }
+
+    const { data, error } = await supabase.functions.invoke("user-management", {
+      body: {
+        action: 'DELETE_USER',
+        user_id_to_delete: agentId,
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    if (data && data.error) {
+        throw new Error(data.error);
+    }
+  },
 
   /**
    * Lists leads for the current tenant using the list_tenant_leads RPC.
@@ -334,15 +397,15 @@ export const adminTenantService = {
 
     const { data, error } = await supabase.rpc("get_lead_with_messages", {
       p_lead_id: leadId,
-    }).single();
+    }).single<LeadWithMessagesRpcResult>(); // Usando tipagem local
 
     if (error) {
       throw new Error(`Failed to fetch lead and messages: ${error.message}`);
     }
 
     // The RPC returns lead_data and messages_data as JSON objects/arrays
-    const lead = data.lead_data as ZapLead;
-    const messages = data.messages_data as ZapMessage[] || [];
+    const lead = data.lead_data;
+    const messages = data.messages_data || [];
 
     return { lead, messages };
   },
@@ -405,7 +468,7 @@ export const adminTenantService = {
   async getDashboardStats(): Promise<ZapDashboardStats> {
     await requireRole(["ADMIN_TENANT"]);
 
-    const { data, error } = await supabase.rpc("get_tenant_dashboard_stats").single();
+    const { data, error } = await supabase.rpc("get_tenant_dashboard_stats").single<DashboardStatsRpcResult>(); // Usando tipagem local
 
     if (error) {
       throw new Error(`Failed to fetch dashboard stats: ${error.message}`);
@@ -528,14 +591,14 @@ export const agentService = {
 
     const { data, error } = await supabase.rpc("get_lead_with_messages", {
       p_lead_id: leadId,
-    }).single();
+    }).single<LeadWithMessagesRpcResult>(); // Usando tipagem local
 
     if (error) {
       throw new Error(`Failed to fetch lead and messages: ${error.message}`);
     }
 
-    const lead = data.lead_data as ZapLead;
-    const messages = data.messages_data as ZapMessage[] || [];
+    const lead = data.lead_data;
+    const messages = data.messages_data || [];
 
     return { lead, messages };
   },
@@ -666,9 +729,9 @@ export const agentService = {
    * Calls the Edge Function to get the current instance status.
    */
   async getInstanceStatus(): Promise<UazapiStatusResponse> {
-    const { data, error } = await supabase.functions.invoke("uazapi-manager", {
-      method: "GET",
-      path: "/instance/status",
+    const { data, error } = await supabase.functions.invoke("uazapi-proxy", {
+      method: "POST",
+      body: { action: 'status' },
     });
 
     if (error) {
@@ -686,25 +749,27 @@ export const agentService = {
    * Calls the Edge Function to create a new Uazapi instance.
    */
   async createInstance(): Promise<void> {
-    const { error } = await supabase.functions.invoke("uazapi-manager", {
+    const { data, error } = await supabase.functions.invoke("uazapi-proxy", {
       method: "POST",
-      path: "/instance/init",
+      body: { action: 'create-instance' },
     });
 
     if (error) {
       throw new Error(`Failed to create instance: ${error.message}`);
     }
     
-    // The Edge Function handles saving the token and initial status
+    if (data && data.error) {
+        throw new Error(data.error);
+    }
   },
   
   /**
    * Calls the Edge Function to connect the instance (returns QR or Pair Code).
    */
   async connectInstance(): Promise<UazapiConnectResponse> {
-    const { data, error } = await supabase.functions.invoke("uazapi-manager", {
+    const { data, error } = await supabase.functions.invoke("uazapi-proxy", {
       method: "POST",
-      path: "/instance/connect",
+      body: { action: 'connect' },
     });
 
     if (error) {
@@ -722,13 +787,35 @@ export const agentService = {
    * Calls the Edge Function to disconnect the instance.
    */
   async disconnectInstance(): Promise<void> {
-    const { error } = await supabase.functions.invoke("uazapi-manager", {
+    const { data, error } = await supabase.functions.invoke("uazapi-proxy", {
       method: "POST",
-      path: "/instance/disconnect",
+      body: { action: 'disconnect' },
     });
 
     if (error) {
       throw new Error(`Failed to disconnect instance: ${error.message}`);
+    }
+    
+    if (data && data.error) {
+        throw new Error(data.error);
+    }
+  },
+  
+  /**
+   * Calls the Edge Function to delete the instance.
+   */
+  async deleteInstance(): Promise<void> {
+    const { data, error } = await supabase.functions.invoke("uazapi-proxy", {
+      method: "POST",
+      body: { action: 'delete' },
+    });
+
+    if (error) {
+      throw new Error(`Failed to delete instance: ${error.message}`);
+    }
+    
+    if (data && data.error) {
+        throw new Error(data.error);
     }
   },
 };
@@ -815,14 +902,8 @@ export const superadminService = {
       throw new Error(`Failed to create individual agent: ${error.message}`);
     }
     
-    // The Edge Function returns a success message, we need to fetch the profile manually
-    // For simplicity in this MVP, we assume success and return a placeholder/refetch.
-    // In a real scenario, the Edge Function should return the created profile data.
-    
-    // Since the Edge Function only returns { message, userId }, we can't return ZapProfile directly.
-    // We'll rely on the caller to refetch the list or handle the success message.
-    // For now, we return a minimal object indicating success.
-    return { id: data.userId, full_name: params.fullName, role: 'AGENT', tenant_id: null, is_active: true, instance_name: null, instance_created_at: null, instance_id: null, instance_token: null };
+    // Since the Edge Function only returns { message, userId }, we return a minimal object indicating success.
+    return { id: data.userId, full_name: params.fullName, role: 'AGENT', tenant_id: null, is_active: true, instance_name: null, instance_created_at: null, instance_id: null, instance_token: null, created_at: new Date().toISOString() };
   },
 
   /**
@@ -833,7 +914,7 @@ export const superadminService = {
 
     const { data, error } = await supabase.rpc("get_tenant_dashboard_stats", {
       p_tenant_id: tenantId,
-    }).single();
+    }).single<DashboardStatsRpcResult>(); // Usando tipagem local
 
     if (error) {
       throw new Error(`Failed to fetch dashboard stats for tenant ${tenantId}: ${error.message}`);
@@ -930,7 +1011,7 @@ export const superadminService = {
   async getPlatformStats(): Promise<PlatformStats> {
     await requireRole(["SUPERADMIN"]);
 
-    const { data, error } = await supabase.rpc("get_platform_dashboard_stats").single();
+    const { data, error } = await supabase.rpc("get_platform_dashboard_stats").single<PlatformStatsRpcResult>(); // Usando tipagem local
 
     if (error) {
       throw new Error(`Failed to fetch platform stats: ${error.message}`);
