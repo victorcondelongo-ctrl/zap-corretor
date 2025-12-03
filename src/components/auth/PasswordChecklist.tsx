@@ -41,7 +41,8 @@ const PasswordChecklist: React.FC<PasswordChecklistProps> = ({ password }) => {
           )}
           <span
             className={cn(
-              check.isValid ? "text-success" : "text-muted-foreground",
+              check.isValid ? "text-success" : "text-destructive",
+              password.length === 0 && "text-muted-foreground" // Se a senha estiver vazia, usa cor neutra
             )}
           >
             {check.label}

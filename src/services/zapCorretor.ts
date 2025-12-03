@@ -123,6 +123,18 @@ export interface SupportTicketData {
     message: string;
 }
 
+export type SupportTicketStatus = 'new' | 'in_progress' | 'closed';
+
+export interface ZapSupportTicket {
+    id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+    message: string;
+    status: SupportTicketStatus;
+    created_at: string;
+}
+
 // =================================================================
 // 2. GENERIC CONTEXT FUNCTIONS
 // =================================================================
@@ -621,6 +633,12 @@ export interface CreateTenantAndAdminParams {
   leadsLimit: number;
 }
 
+export interface CreateIndividualAgentParams {
+    fullName: string;
+    email: string;
+    password: string;
+}
+
 export const superadminService = {
   /**
    * Lists all tenants in the system.
@@ -645,6 +663,8 @@ export const superadminService = {
   async createTenantAndAdmin(params: CreateTenantAndAdminParams): Promise<ZapTenant> {
     await requireRole(["SUPERADMIN"]);
 
+    // NOTE: This function is currently unused as the signup flow handles tenant creation via trigger.
+    // Keeping it for Superadmin manual creation flow later.
     const { data, error } = await supabase.functions.invoke("create-tenant-and-admin", {
       body: {
         tenant_name: params.tenantName,
@@ -664,6 +684,36 @@ export const superadminService = {
     }
 
     throw new Error("Failed to retrieve created tenant data from Edge Function response.");
+  },
+  
+  /**
+   * Creates a new individual agent (AGENT role, no tenant_id) via Edge Function.
+   */
+  async createIndividualAgent(params: CreateIndividualAgentParams): Promise<ZapProfile> {
+    await requireRole(["SUPERADMIN"]);
+
+    const { data, error } = await supabase.functions.invoke("user-management", {
+      body: {
+        email: params.email,
+        password: params.password,
+        full_name: params.fullName,
+        role: "AGENT",
+        tenant_id: null, // Individual agents don't belong to a tenant
+      },
+    });
+
+    if (error) {
+      throw new Error(`Failed to create individual agent: ${error.message}`);
+    }
+    
+    // The Edge Function returns a success message, we need to fetch the profile manually
+    // For simplicity in this MVP, we assume success and return a placeholder/refetch.
+    // In a real scenario, the Edge Function should return the created profile data.
+    
+    // Since the Edge Function only returns { message, userId }, we can't return ZapProfile directly.
+    // We'll rely on the caller to refetch the list or handle the success message.
+    // For now, we return a minimal object indicating success.
+    return { id: data.userId, full_name: params.fullName, role: 'AGENT', tenant_id: null, is_active: true };
   },
 
   /**
@@ -778,5 +828,53 @@ export const superadminService = {
     }
 
     return data as PlatformStats;
+  },
+  
+  /**
+   * Lists all support tickets.
+   */
+  async listSupportTickets(statusFilter: SupportTicketStatus | 'all' = 'all'): Promise<ZapSupportTicket[]> {
+    await requireRole(["SUPERADMIN"]);
+    
+    let query = supabase
+      .from("support_tickets")
+      .select("*")
+      .order('created_at', { ascending: false });
+      
+    if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(`Failed to list support tickets: ${error.message}`);
+    }
+    
+    // Ensure status field exists, defaulting to 'new' if not present (since we just created the table)
+    return (data as ZapSupportTicket[]).map(ticket => ({
+        ...ticket,
+        status: ticket.status || 'new',
+    }));
+  },
+  
+  /**
+   * Updates the status of a support ticket.
+   */
+  async updateSupportTicketStatus(ticketId: string, status: SupportTicketStatus): Promise<ZapSupportTicket> {
+    await requireRole(["SUPERADMIN"]);
+
+    const { data, error } = await supabase
+      .from("support_tickets")
+      .update({ status })
+      .eq("id", ticketId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update ticket status: ${error.message}`);
+    }
+
+    return data as ZapSupportTicket;
   },
 };

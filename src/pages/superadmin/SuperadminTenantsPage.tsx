@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { superadminService, ZapTenant } from "@/services/zapCorretor";
+import { superadminService, ZapTenant, ZapProfile } from "@/services/zapCorretor";
 import { showError } from "@/utils/toast";
 import {
   Table,
@@ -60,10 +60,16 @@ const SuperadminTenantsPage = () => {
     }
   }, [error]);
 
-  const handleTenantCreated = (newTenant: ZapTenant) => {
+  const handleTenantCreated = (result: ZapTenant | ZapProfile) => {
     // Invalidate the query to refetch the list and update the dashboard
-    queryClient.invalidateQueries({ queryKey: ["superadminTenantsList"] });
-    queryClient.invalidateQueries({ queryKey: ["superadminTenants"] }); // Dashboard list
+    if ('tenant_id' in result) {
+        // It's a ZapProfile (Individual Agent) - we don't list them here, but we might need to update agent counts
+        queryClient.invalidateQueries({ queryKey: ["platformStats"] });
+    } else {
+        // It's a ZapTenant (Corretora)
+        queryClient.invalidateQueries({ queryKey: ["superadminTenantsList"] });
+        queryClient.invalidateQueries({ queryKey: ["platformStats"] });
+    }
   };
 
   return (
@@ -71,7 +77,7 @@ const SuperadminTenantsPage = () => {
       <header className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Corretoras</h1>
         <Button onClick={() => setIsModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" /> Nova Corretora
+          <Plus className="w-4 h-4 mr-2" /> Nova Corretora/Corretor
         </Button>
       </header>
 

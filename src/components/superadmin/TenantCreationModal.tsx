@@ -7,12 +7,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import CreateTenantForm from "./CreateTenantForm";
-import { ZapTenant } from "@/services/zapCorretor";
+import { ZapTenant, ZapProfile } from "@/services/zapCorretor";
 
 interface TenantCreationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onTenantCreated: (tenant: ZapTenant) => void;
+  onTenantCreated: (tenant: ZapTenant | ZapProfile) => void;
 }
 
 const TenantCreationModal: React.FC<TenantCreationModalProps> = ({ isOpen, onClose, onTenantCreated }) => {
@@ -20,9 +20,9 @@ const TenantCreationModal: React.FC<TenantCreationModalProps> = ({ isOpen, onClo
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Cadastrar Nova Corretora</DialogTitle>
+          <DialogTitle>Cadastrar Nova Corretora ou Corretor Avulso</DialogTitle>
           <DialogDescription>
-            Preencha os detalhes para criar uma nova corretora e iniciar o período de teste.
+            Preencha os detalhes para criar uma nova conta na plataforma.
           </DialogDescription>
         </DialogHeader>
         <CreateTenantForm onTenantCreated={onTenantCreated} onClose={onClose} />

@@ -26,6 +26,7 @@ import SuperadminPlansPage from "./pages/superadmin/SuperadminPlansPage";
 import SuperadminIntegrationsPage from "./pages/superadmin/SuperadminIntegrationsPage";
 import SuperadminSettingsPage from "./pages/superadmin/SuperadminSettingsPage";
 import SuperadminTenantDetailPage from "./pages/superadmin/SuperadminTenantDetailPage";
+import SuperadminSupportPage from "./pages/superadmin/SuperadminSupportPage"; // Import new page
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,7 @@ const App = () => (
               <Route path="plans" element={<SuperadminPlansPage />} />
               <Route path="integrations" element={<SuperadminIntegrationsPage />} />
               <Route path="settings" element={<SuperadminSettingsPage />} />
+              <Route path="support" element={<SuperadminSupportPage />} /> {/* New Route */}
             </Route>
 
             {/* ADMIN TENANT ROUTES - Wrapped in Layout */}

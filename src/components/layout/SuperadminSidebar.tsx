@@ -7,6 +7,7 @@ import {
   Settings,
   Plug,
   LogOut,
+  LifeBuoy, // Import LifeBuoy icon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +25,7 @@ const navItems: NavItem[] = [
   { title: "Planos e Limites", href: "/superadmin/plans", icon: DollarSign },
   { title: "Integrações", href: "/superadmin/integrations", icon: Plug },
   { title: "Configurações Globais", href: "/superadmin/settings", icon: Settings },
+  { title: "Tickets de Suporte", href: "/superadmin/support", icon: LifeBuoy }, // New item
 ];
 
 const SuperadminSidebar: React.FC = () => {
