@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import {
   Form,
@@ -18,9 +17,9 @@ import { superadminService, ZapTenant } from "@/services/zapCorretor";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 
 const formSchema = z.object({
-  name: z.string().min(2, "O nome deve ter pelo menos 2 caracteres."),
-  whatsappCentralNumber: z.string().regex(/^\d{10,15}$/, "Número de WhatsApp inválido (apenas dígitos, 10-15 caracteres)."),
-  timezone: z.string().min(1, "Fuso horário é obrigatório."),
+  tenantName: z.string().min(2, "O nome deve ter pelo menos 2 caracteres."),
+  adminEmail: z.string().email("E-mail inválido."),
+  adminPassword: z.string().min(6, "A senha deve ter pelo menos 6 caracteres."),
   baseMonthlyLeadsLimit: z.number().int().min(100, "O limite deve ser de pelo menos 100 leads."),
 });
 
@@ -35,9 +34,9 @@ const CreateTenantForm: React.FC<CreateTenantFormProps> = ({ onTenantCreated, on
   const form = useForm<TenantFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      whatsappCentralNumber: "",
-      timezone: "America/Sao_Paulo", // Default timezone
+      tenantName: "",
+      adminEmail: "",
+      adminPassword: "",
       baseMonthlyLeadsLimit: 3000,
     },
   });
@@ -45,16 +44,16 @@ const CreateTenantForm: React.FC<CreateTenantFormProps> = ({ onTenantCreated, on
   const { isSubmitting } = form.formState;
 
   const onSubmit = async (values: TenantFormValues) => {
-    const toastId = showLoading("Criando nova corretora...");
+    const toastId = showLoading("Criando nova corretora e administrador...");
     try {
-      const newTenant = await superadminService.createTenant({
-        name: values.name,
-        whatsappCentralNumber: values.whatsappCentralNumber,
-        timezone: values.timezone,
-        baseMonthlyLeadsLimit: values.baseMonthlyLeadsLimit,
+      const newTenant = await superadminService.createTenantAndAdmin({
+        tenantName: values.tenantName,
+        adminEmail: values.adminEmail,
+        adminPassword: values.adminPassword,
+        leadsLimit: values.baseMonthlyLeadsLimit,
       });
 
-      showSuccess(`Corretora "${newTenant.name}" criada com sucesso!`);
+      showSuccess(`Corretora "${newTenant.name}" criada! Admin criado em ${values.adminEmail}.`);
       onTenantCreated(newTenant);
       onClose();
     } catch (error) {
@@ -70,7 +69,7 @@ const CreateTenantForm: React.FC<CreateTenantFormProps> = ({ onTenantCreated, on
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="name"
+          name="tenantName"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Nome da Corretora</FormLabel>
@@ -84,12 +83,12 @@ const CreateTenantForm: React.FC<CreateTenantFormProps> = ({ onTenantCreated, on
 
         <FormField
           control={form.control}
-          name="whatsappCentralNumber"
+          name="adminEmail"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>WhatsApp Central (Apenas dígitos)</FormLabel>
+              <FormLabel>E-mail do Administrador</FormLabel>
               <FormControl>
-                <Input placeholder="5511987654321" {...field} />
+                <Input type="email" placeholder="admin@corretora.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -98,13 +97,12 @@ const CreateTenantForm: React.FC<CreateTenantFormProps> = ({ onTenantCreated, on
 
         <FormField
           control={form.control}
-          name="timezone"
+          name="adminPassword"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Fuso Horário</FormLabel>
+              <FormLabel>Senha Inicial do Administrador</FormLabel>
               <FormControl>
-                {/* Simplificado para input de texto por enquanto, mas idealmente seria um Select */}
-                <Input placeholder="Ex: America/Sao_Paulo" {...field} />
+                <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -134,7 +132,7 @@ const CreateTenantForm: React.FC<CreateTenantFormProps> = ({ onTenantCreated, on
           {isSubmitting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
-            "Criar Corretora"
+            "Criar Corretora e Admin"
           )}
         </Button>
       </form>

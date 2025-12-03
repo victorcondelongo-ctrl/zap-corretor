@@ -382,11 +382,11 @@ export const agentService = {
 // 5. SUPERADMIN SERVICES
 // =================================================================
 
-export interface CreateTenantParams {
-  name: string;
-  whatsappCentralNumber: string;
-  timezone: string;
-  baseMonthlyLeadsLimit: number;
+export interface CreateTenantAndAdminParams {
+  tenantName: string;
+  adminEmail: string;
+  adminPassword: string;
+  leadsLimit: number;
 }
 
 export const superadminService = {
@@ -408,29 +408,30 @@ export const superadminService = {
   },
 
   /**
-   * Creates a new tenant using the create_tenant RPC.
+   * Creates a new tenant and its initial ADMIN_TENANT user via Edge Function.
    */
-  async createTenant(params: CreateTenantParams): Promise<ZapTenant> {
+  async createTenantAndAdmin(params: CreateTenantAndAdminParams): Promise<ZapTenant> {
     await requireRole(["SUPERADMIN"]);
 
-    // Default plan status and expiration for new tenants (e.g., 30 days trial)
-    const plan_status = 'trial';
-    const plan_expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
-    const { data, error } = await supabase.rpc("create_tenant", {
-      p_name: params.name,
-      p_whatsapp_central_number: params.whatsappCentralNumber,
-      p_timezone: params.timezone,
-      p_plan_status: plan_status,
-      p_plan_expires_at: plan_expires_at,
-      p_base_monthly_leads_limit: params.baseMonthlyLeadsLimit,
-    }).single();
+    const { data, error } = await supabase.functions.invoke("create-tenant-and-admin", {
+      body: {
+        tenant_name: params.tenantName,
+        admin_email: params.adminEmail,
+        admin_password: params.adminPassword,
+        leads_limit: params.leadsLimit,
+      },
+    });
 
     if (error) {
-      throw new Error(`Failed to create tenant: ${error.message}`);
+      throw new Error(`Failed to create tenant and admin: ${error.message}`);
+    }
+    
+    // The Edge Function returns the created tenant object inside the 'tenant' key
+    if (data && data.tenant) {
+        return data.tenant as ZapTenant;
     }
 
-    return data as ZapTenant;
+    throw new Error("Failed to retrieve created tenant data from Edge Function response.");
   },
 
   /**
