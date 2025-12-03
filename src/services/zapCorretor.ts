@@ -15,14 +15,18 @@ export interface ZapProfile {
   role: ZapRole;
   tenant_id: string | null;
   is_active: boolean;
-  created_at: string; // Adicionado created_at
+  created_at: string;
+  // New field for agent alerts (stored in profiles, but fetched with settings)
+  whatsapp_alert_number: string | null; 
   // Fields related to Uazapi instance stored in profiles
   instance_name: string | null;
   instance_created_at: string | null;
   instance_id: string | null;
   instance_token: string | null;
-  // New field for individual export permission (to be added to DB later if needed, but defined here for future use)
-  can_export_leads?: boolean; 
+  // Settings fields flattened from agent_settings table (used in AdminAgentsPage)
+  can_export_leads?: boolean;
+  schedule_enabled?: boolean;
+  schedule_config?: AgentScheduleConfig | null;
 }
 
 export interface ZapLead {
@@ -114,12 +118,23 @@ export interface ZapTenant {
   updated_at: string;
 }
 
+export interface AgentScheduleConfig {
+    // Ex: { "monday": ["09:00", "18:00"], "tuesday": ["09:00", "18:00"], ... }
+    [day: string]: [string, string] | null;
+}
+
 export interface ZapAgentSettings {
 // ... (rest of ZapAgentSettings remains the same)
   agent_id: string;
   ai_prompt: string | null;
   followup_30min_enabled: boolean;
   followup_24h_enabled: boolean;
+  // New fields
+  can_export_leads: boolean;
+  schedule_enabled: boolean;
+  schedule_config: AgentScheduleConfig | null;
+  // Adding whatsapp_alert_number here to facilitate passing it in saveSettings (Error 1, 2)
+  whatsapp_alert_number?: string | null; 
 }
 
 export interface ZapTenantSettings {
@@ -223,7 +238,7 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
 
     const { data: profile, error } = await supabase
       .from("profiles")
-      .select("*")
+      .select("*, agent_settings(can_export_leads, schedule_enabled, schedule_config)")
       .eq("id", user.id)
       .maybeSingle();     // Usando maybeSingle para evitar erro PGRST116
 
@@ -238,7 +253,7 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
       throw new Error(`Profile not found for user ID: ${user.id}`);
     }
 
-    // Ensure fields are correctly typed
+    // Ensure fields are correctly typed and flatten settings for AGENTs
     const typedProfile: ZapProfile = {
       ...profile,
       tenant_id: profile.tenant_id as string | null,
@@ -246,7 +261,13 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
       instance_created_at: profile.instance_created_at as string | null,
       instance_id: profile.instance_id as string | null,
       instance_token: profile.instance_token as string | null,
+      whatsapp_alert_number: profile.whatsapp_alert_number as string | null,
       created_at: profile.created_at as string, // Ensure created_at is present
+      
+      // Flatten settings for AGENTs (Errors 3, 4, 5, 7, 8 fixed by this)
+      can_export_leads: profile.agent_settings?.[0]?.can_export_leads ?? false,
+      schedule_enabled: profile.agent_settings?.[0]?.schedule_enabled ?? false,
+      schedule_config: profile.agent_settings?.[0]?.schedule_config ?? null,
     };
 
     console.log("[getCurrentProfile] success, returning profile");
@@ -296,6 +317,17 @@ export async function submitSupportTicket(data: SupportTicketData): Promise<void
 // 3. ADMIN_TENANT SERVICES
 // =================================================================
 
+export interface AgentUpdateData {
+    full_name?: string;
+    is_active?: boolean;
+    email?: string;
+    whatsapp_alert_number?: string | null;
+    // Settings fields
+    can_export_leads?: boolean;
+    schedule_enabled?: boolean;
+    schedule_config?: AgentScheduleConfig | null;
+}
+
 export const adminTenantService = {
   /**
    * Lists all active agents within the ADMIN_TENANT's organization.
@@ -305,36 +337,94 @@ export const adminTenantService = {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, role, tenant_id, is_active, created_at, instance_name, instance_created_at, instance_id, instance_token")
+      .select("id, full_name, role, tenant_id, is_active, created_at, instance_name, instance_created_at, instance_id, instance_token, whatsapp_alert_number, agent_settings(can_export_leads, schedule_enabled, schedule_config)")
       .eq("role", "AGENT"); // RLS will filter by tenant_id automatically
 
     if (error) {
       throw new Error(`Failed to list agents: ${error.message}`);
     }
-
-    return data as ZapProfile[];
+    
+    // Map the nested agent_settings data into the profile structure for easier use
+    return data.map(p => ({
+        ...p,
+        // Flatten agent_settings into the profile object
+        can_export_leads: p.agent_settings?.[0]?.can_export_leads ?? false,
+        schedule_enabled: p.agent_settings?.[0]?.schedule_enabled ?? false,
+        schedule_config: p.agent_settings?.[0]?.schedule_config ?? null,
+    })) as ZapProfile[];
   },
   
   /**
-   * Updates an agent's profile (name and active status).
+   * Updates an agent's profile (name, active status, email, whatsapp number) and settings.
    */
-  async updateAgentProfile(agentId: string, updateData: { full_name?: string, is_active?: boolean }): Promise<ZapProfile> {
+  async updateAgentProfile(agentId: string, updateData: AgentUpdateData): Promise<ZapProfile> {
     const profile = await requireRole(["ADMIN_TENANT"]);
     
-    const { data, error } = await supabase
-      .from("profiles")
-      .update({ ...updateData, updated_at: new Date().toISOString() })
-      .eq("id", agentId)
-      .eq("tenant_id", profile.tenant_id) // RLS check is redundant but good practice
-      .eq("role", "AGENT") // Ensure we only update agents
-      .select("id, full_name, role, tenant_id, is_active, created_at, instance_name, instance_created_at, instance_id, instance_token")
-      .single();
+    // 1. Prepare Profile Update Data
+    const profileUpdate: Partial<ZapProfile> = {};
+    if (updateData.full_name !== undefined) profileUpdate.full_name = updateData.full_name;
+    if (updateData.is_active !== undefined) profileUpdate.is_active = updateData.is_active;
+    if (updateData.whatsapp_alert_number !== undefined) profileUpdate.whatsapp_alert_number = updateData.whatsapp_alert_number;
+    
+    // 2. Prepare Settings Update Data
+    const settingsUpdate: Partial<ZapAgentSettings> = {};
+    if (updateData.can_export_leads !== undefined) settingsUpdate.can_export_leads = updateData.can_export_leads;
+    if (updateData.schedule_enabled !== undefined) settingsUpdate.schedule_enabled = updateData.schedule_enabled;
+    if (updateData.schedule_config !== undefined) settingsUpdate.schedule_config = updateData.schedule_config;
 
-    if (error) {
-      throw new Error(`Failed to update agent profile: ${error.message}`);
+    // 3. Call Edge Function for Auth/Profile Update
+    const { data: edgeData, error: edgeError } = await supabase.functions.invoke("user-management", {
+        body: {
+            action: 'UPDATE_USER',
+            user_id_to_update: agentId,
+            new_email: updateData.email,
+            new_full_name: profileUpdate.full_name,
+            new_is_active: profileUpdate.is_active,
+            new_whatsapp_alert_number: profileUpdate.whatsapp_alert_number,
+        },
+    });
+
+    if (edgeError) {
+        throw new Error(`Failed to update agent profile (Edge): ${edgeError.message}`);
+    }
+    
+    // 4. Update Agent Settings (if any settings fields were provided)
+    if (Object.keys(settingsUpdate).length > 0) {
+        const settingsPayload = {
+            ...settingsUpdate,
+            agent_id: agentId,
+            updated_at: new Date().toISOString(),
+        };
+        
+        const { error: settingsError } = await supabase
+            .from("agent_settings")
+            .upsert(settingsPayload, { onConflict: 'agent_id' });
+            
+        if (settingsError) {
+            throw new Error(`Failed to update agent settings: ${settingsError.message}`);
+        }
     }
 
-    return data as ZapProfile;
+    // 5. Refetch the updated profile and settings
+    const { data: updatedProfileData, error: refetchError } = await supabase
+        .from("profiles")
+        .select("id, full_name, role, tenant_id, is_active, created_at, instance_name, instance_created_at, instance_id, instance_token, whatsapp_alert_number, agent_settings(can_export_leads, schedule_enabled, schedule_config)")
+        .eq("id", agentId)
+        .single();
+        
+    if (refetchError) {
+        throw new Error(`Failed to refetch updated agent profile: ${refetchError.message}`);
+    }
+    
+    // Map and return the flattened profile
+    const updatedProfile = {
+        ...updatedProfileData,
+        can_export_leads: updatedProfileData.agent_settings?.[0]?.can_export_leads ?? false,
+        schedule_enabled: updatedProfileData.agent_settings?.[0]?.schedule_enabled ?? false,
+        schedule_config: updatedProfileData.agent_settings?.[0]?.schedule_config ?? null,
+    } as ZapProfile;
+
+    return updatedProfile;
   },
   
   /**
@@ -645,7 +735,7 @@ export const agentService = {
 
     const { data, error } = await supabase
       .from("agent_settings")
-      .select("*")
+      .select("*, profiles(whatsapp_alert_number)")
       .eq("agent_id", profile.id)
       .maybeSingle();
 
@@ -660,10 +750,23 @@ export const agentService = {
             ai_prompt: null,
             followup_30min_enabled: true,
             followup_24h_enabled: true,
+            can_export_leads: false,
+            schedule_enabled: false,
+            schedule_config: null,
+            whatsapp_alert_number: profile.whatsapp_alert_number, // Use profile's number if settings don't exist
         };
     }
+    
+    // Flatten the profile data (whatsapp_alert_number) into the settings object
+    const settings: ZapAgentSettings = {
+        ...data,
+        // Ensure nested data is correctly accessed and typed
+        schedule_config: data.schedule_config as AgentScheduleConfig | null,
+        // The nested select returns an array, we extract the number
+        whatsapp_alert_number: data.profiles?.whatsapp_alert_number || profile.whatsapp_alert_number,
+    };
 
-    return data as ZapAgentSettings;
+    return settings;
   },
 
   /**
@@ -673,7 +776,12 @@ export const agentService = {
     const profile = await requireRole(["AGENT"]);
     
     const updateData = {
-        ...settings,
+        ai_prompt: settings.ai_prompt,
+        followup_30min_enabled: settings.followup_30min_enabled,
+        followup_24h_enabled: settings.followup_24h_enabled,
+        can_export_leads: settings.can_export_leads,
+        schedule_enabled: settings.schedule_enabled,
+        schedule_config: settings.schedule_config,
         agent_id: profile.id,
         updated_at: new Date().toISOString(),
     };
@@ -686,6 +794,13 @@ export const agentService = {
 
     if (error) {
       throw new Error(`Failed to save agent settings: ${error.message}`);
+    }
+
+    // If the agent is independent, they can update their own alert number via profile update
+    if (profile.tenant_id === null && settings.whatsapp_alert_number !== undefined) {
+        await supabase.from("profiles")
+            .update({ whatsapp_alert_number: settings.whatsapp_alert_number, updated_at: new Date().toISOString() })
+            .eq("id", profile.id);
     }
 
     return data as ZapAgentSettings;
@@ -903,7 +1018,7 @@ export const superadminService = {
     }
     
     // Since the Edge Function only returns { message, userId }, we return a minimal object indicating success.
-    return { id: data.userId, full_name: params.fullName, role: 'AGENT', tenant_id: null, is_active: true, instance_name: null, instance_created_at: null, instance_id: null, instance_token: null, created_at: new Date().toISOString() };
+    return { id: data.userId, full_name: params.fullName, role: 'AGENT', tenant_id: null, is_active: true, instance_name: null, instance_created_at: null, instance_id: null, instance_token: null, whatsapp_alert_number: null, created_at: new Date().toISOString() };
   },
 
   /**

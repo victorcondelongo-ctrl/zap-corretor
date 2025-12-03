@@ -39,7 +39,8 @@ serve(async (req) => {
   const supabaseAdmin = createSupabaseAdminClient();
 
   try {
-    const { email, password, full_name, role, tenant_id, action, user_id_to_delete } = await req.json();
+    const body = await req.json();
+    const { email, password, full_name, role, tenant_id, action, user_id_to_delete, user_id_to_update, new_email, new_full_name, new_is_active, new_whatsapp_alert_number } = body;
 
     // --- Handle DELETE_USER action ---
     if (action === 'DELETE_USER') {
@@ -73,6 +74,62 @@ serve(async (req) => {
         );
     }
     
+    // --- Handle UPDATE_USER action (Used by ADMIN_TENANT to edit agent details) ---
+    if (action === 'UPDATE_USER') {
+        if (!user_id_to_update) {
+            return new Response(JSON.stringify({ error: "Missing user_id_to_update field" }), {
+                status: 400,
+                headers: corsHeaders,
+            });
+        }
+        
+        // 1. Update Auth Email (if provided)
+        if (new_email) {
+            const { error: authUpdateError } = await supabaseAdmin.auth.admin.updateUserById(user_id_to_update, {
+                email: new_email,
+            });
+            if (authUpdateError) {
+                console.error("Error updating auth email:", authUpdateError.message);
+                return new Response(JSON.stringify({ error: `Failed to update user email: ${authUpdateError.message}` }), {
+                    status: 400,
+                    headers: corsHeaders,
+                });
+            }
+        }
+        
+        // 2. Update Profile Details
+        const profileUpdateData: any = {};
+        if (new_full_name !== undefined) profileUpdateData.full_name = new_full_name;
+        if (new_is_active !== undefined) profileUpdateData.is_active = new_is_active;
+        if (new_whatsapp_alert_number !== undefined) profileUpdateData.whatsapp_alert_number = new_whatsapp_alert_number;
+        profileUpdateData.updated_at = new Date().toISOString();
+
+        if (Object.keys(profileUpdateData).length > 1) { // Check if there's actual data besides updated_at
+            const { error: profileUpdateError } = await supabaseAdmin.from("profiles")
+                .update(profileUpdateData)
+                .eq("id", user_id_to_update);
+
+            if (profileUpdateError) {
+                console.error("Error updating profile:", profileUpdateError.message);
+                return new Response(JSON.stringify({ error: `Failed to update profile details: ${profileUpdateError.message}` }), {
+                    status: 500,
+                    headers: corsHeaders,
+                });
+            }
+        }
+
+        return new Response(
+            JSON.stringify({
+                message: "User and profile updated successfully",
+                userId: user_id_to_update,
+            }),
+            {
+                status: 200,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+            },
+        );
+    }
+
     // --- Handle CREATE_USER action (Original logic) ---
     
     if (!email || !password || !full_name || !role) {
@@ -100,11 +157,7 @@ serve(async (req) => {
 
     const newUserId = userData.user!.id;
 
-    // 2. Cria o perfil na tabela profiles (O trigger handle_new_user deveria fazer isso, 
-    // mas para Edge Functions que criam usuários admin, fazemos manualmente ou confiamos no trigger.
-    // Como este endpoint é usado para criar AGENTs por ADMIN_TENANT, o trigger não é acionado.
-    // O trigger só é acionado em SIGNUP. Portanto, fazemos manualmente aqui.)
-    
+    // 2. Cria o perfil na tabela profiles
     const profileData: any = {
       id: newUserId,
       full_name,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Plus, Loader2, Edit, Trash2 } from "lucide-react";
+import { Users, Plus, Loader2, Edit, Trash2, FileText, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AgentCreationModal from "@/components/admin/AgentCreationModal";
 import AgentEditModal from "@/components/admin/AgentEditModal";
@@ -84,6 +84,25 @@ const AdminAgentsPage = () => {
           dismissToast(toastId);
       }
   };
+  
+  const handleToggleActiveStatus = async (agent: ZapProfile) => {
+      const newStatus = !agent.is_active;
+      const toastId = showLoading(newStatus ? `Ativando ${agent.full_name}...` : `Pausando ${agent.full_name}...`);
+      
+      try {
+          const updatedAgent = await adminTenantService.updateAgentProfile(agent.id, {
+              is_active: newStatus,
+          });
+          
+          showSuccess(`Status de ${agent.full_name} alterado para ${newStatus ? 'ATIVO' : 'PAUSADO'}.`);
+          handleAgentUpdated(updatedAgent);
+      } catch (err) {
+          console.error("Toggle status error:", err);
+          showError(err instanceof Error ? err.message : "Falha ao alterar o status.");
+      } finally {
+          dismissToast(toastId);
+      }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -109,6 +128,7 @@ const AdminAgentsPage = () => {
                   <TableHead>Nome</TableHead>
                   <TableHead>Email (ID)</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Exportar Leads</TableHead>
                   <TableHead>Criado Em</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -116,21 +136,21 @@ const AdminAgentsPage = () => {
               <TableBody>
                 {loading && (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={6} className="h-24 text-center">
                       <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                     </TableCell>
                   </TableRow>
                 )}
                 {error && (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-destructive">
+                    <TableCell colSpan={6} className="h-24 text-center text-destructive">
                       {error}
                     </TableCell>
                   </TableRow>
                 )}
                 {!loading && agents.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                       Nenhum corretor encontrado.
                     </TableCell>
                   </TableRow>
@@ -144,11 +164,24 @@ const AdminAgentsPage = () => {
                     </TableCell>
                     <TableCell>
                       <Badge variant={agent.is_active ? "success" : "destructive"}>
-                        {agent.is_active ? "ATIVO" : "INATIVO"}
+                        {agent.is_active ? "ATIVO" : "PAUSADO"}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                        <Badge variant={agent.can_export_leads ? "default" : "secondary"}>
+                            <FileText className="w-3 h-3 mr-1" /> {agent.can_export_leads ? "ATIVO" : "INATIVO"}
+                        </Badge>
                     </TableCell>
                     <TableCell>{format(new Date(agent.created_at), 'dd/MM/yyyy')}</TableCell>
                     <TableCell className="text-right space-x-2">
+                      <Button 
+                        variant={agent.is_active ? "destructive" : "success"} 
+                        size="sm" 
+                        onClick={() => handleToggleActiveStatus(agent)}
+                        disabled={loading}
+                      >
+                        <Clock className="w-4 h-4 mr-1" /> {agent.is_active ? 'Pausar' : 'Ativar'}
+                      </Button>
                       <Button variant="outline" size="sm" onClick={() => setEditingAgent(agent)}>
                         <Edit className="w-4 h-4 mr-1" /> Editar
                       </Button>
