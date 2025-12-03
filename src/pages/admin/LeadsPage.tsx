@@ -25,10 +25,20 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Search, CheckCircle, XCircle, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 
+// Mapa de tradução para os status
+const statusTranslations: Record<LeadStatus | 'all', string> = {
+  'all': 'Todos os Status',
+  'new': 'Novo',
+  'in_progress': 'Em Atendimento',
+  'qualified': 'Qualificado',
+  'abandoned': 'Abandonado',
+  'sold': 'Vendido',
+};
+
 // Helper component for status badge styling
 const StatusBadge: React.FC<{ status: LeadStatus }> = ({ status }) => {
   let variant: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" = "secondary";
-  let text = status.replace('_', ' ');
+  let text = statusTranslations[status] || status.replace('_', ' ');
 
   switch (status) {
     case 'new':
@@ -272,8 +282,8 @@ const LeadsPage = () => {
             </SelectTrigger>
             <SelectContent>
               {leadStatuses.map(status => (
-                <SelectItem key={status} value={status} className="capitalize">
-                  {status === 'all' ? 'Todos os Status' : status.replace('_', ' ')}
+                <SelectItem key={status} value={status}>
+                  {statusTranslations[status]}
                 </SelectItem>
               ))}
             </SelectContent>
