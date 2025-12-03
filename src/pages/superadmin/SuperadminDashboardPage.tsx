@@ -15,6 +15,7 @@ import {
 import { showError } from "@/utils/toast";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 // --- Helper Components ---
 
@@ -26,7 +27,7 @@ interface MetricCardProps {
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon, className = "" }) => (
-  <Card className={className}>
+  <Card className={cn("rounded-xl shadow-md transition-all duration-300 hover:shadow-lg", className)}>
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium">{title}</CardTitle>
       {icon}
@@ -119,7 +120,7 @@ const SuperadminDashboardPage = () => {
   return (
     <div className="p-6 space-y-8">
       <header>
-        <h1 className="text-3xl font-bold">Dashboard Superadmin</h1>
+        <h1 className="text-3xl font-bold text-brand">Dashboard Superadmin</h1>
         <p className="text-muted-foreground">Visão geral de todas as corretoras.</p>
       </header>
 
@@ -128,7 +129,7 @@ const SuperadminDashboardPage = () => {
         <MetricCard 
             title="Total de Corretoras" 
             value={totalTenants} 
-            icon={<Building className="h-4 w-4 text-blue-500" />} 
+            icon={<Building className="h-4 w-4 text-brand" />} 
         />
         <MetricCard 
             title="Corretoras Ativas" 
@@ -143,18 +144,18 @@ const SuperadminDashboardPage = () => {
         <MetricCard 
             title="Leads Gerados (Total)" 
             value={totalLeadsGenerated.toLocaleString()} 
-            icon={<TrendingUp className="h-4 w-4 text-primary" />} 
+            icon={<TrendingUp className="h-4 w-4 text-brand" />} 
         />
         <MetricCard 
             title="Vendas Marcadas (Total)" 
             value={totalSales.toLocaleString()} 
-            icon={<DollarSign className="h-4 w-4 text-green-600" />} 
+            icon={<DollarSign className="h-4 w-4 text-success" />} 
         />
         <MetricCard 
             title="Planos Expirando (7 dias)" 
             value={expiringSoon} 
-            icon={<Clock className="h-4 w-4 text-yellow-600" />} 
-            className={expiringSoon > 0 ? "border-yellow-500" : ""}
+            icon={<Clock className="h-4 w-4 text-warning" />} 
+            className={expiringSoon > 0 ? "border-warning/50" : ""}
         />
         <MetricCard 
             title="Corretoras Inadimplentes" 
@@ -165,7 +166,7 @@ const SuperadminDashboardPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Tabela: Corretoras em Destaque (Top 5 por limite) */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 rounded-xl shadow-md">
           <CardHeader>
             <CardTitle>Corretoras (Top 5 por Limite)</CardTitle>
           </CardHeader>
@@ -182,9 +183,9 @@ const SuperadminDashboardPage = () => {
         </Card>
 
         {/* Alertas de Risco */}
-        <Card>
+        <Card className="rounded-xl shadow-md">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-yellow-600">
+            <CardTitle className="flex items-center gap-2 text-warning">
               <AlertTriangle className="h-5 w-5" /> Alertas de Plano
             </CardTitle>
           </CardHeader>

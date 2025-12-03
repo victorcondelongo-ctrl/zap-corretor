@@ -5,6 +5,7 @@ import { Loader2, Users, Target, CheckCircle, Clock, XCircle, DollarSign } from 
 import { showError } from "@/utils/toast";
 import { Separator } from "@/components/ui/separator";
 import WhatsAppConnectionCard from "@/components/agent/WhatsAppConnectionCard"; // Import new component
+import { cn } from "@/lib/utils";
 
 // --- Helper Components ---
 
@@ -16,7 +17,7 @@ interface MetricCardProps {
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon, className = "" }) => (
-  <Card className={className}>
+  <Card className={cn("rounded-xl shadow-md transition-all duration-300 hover:shadow-lg", className)}>
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium">{title}</CardTitle>
       {icon}
@@ -108,7 +109,7 @@ const AgentDashboardPage = () => {
 
   return (
     <div className="p-6 space-y-8">
-      <h1 className="text-3xl font-bold">Meu Dashboard</h1>
+      <h1 className="text-3xl font-bold text-brand">Meu Dashboard</h1>
       <p className="text-muted-foreground">Visão geral dos seus leads e performance.</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -120,15 +121,15 @@ const AgentDashboardPage = () => {
         {/* Metrics */}
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <MetricCard title="Total de Leads" value={totalLeads} icon={<Users className="h-4 w-4 text-muted-foreground" />} />
-            <MetricCard title="Qualificados" value={counts.qualified || 0} icon={<Target className="h-4 w-4 text-green-500" />} />
-            <MetricCard title="Vendas no Mês" value={totalSales} icon={<DollarSign className="h-4 w-4 text-primary" />} />
-            <MetricCard title="Em Atendimento" value={counts.in_progress || 0} icon={<Clock className="h-4 w-4 text-yellow-500" />} />
+            <MetricCard title="Qualificados" value={counts.qualified || 0} icon={<Target className="h-4 w-4 text-success" />} />
+            <MetricCard title="Vendas no Mês" value={totalSales} icon={<DollarSign className="h-4 w-4 text-brand" />} />
+            <MetricCard title="Em Atendimento" value={counts.in_progress || 0} icon={<Clock className="h-4 w-4 text-warning" />} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Funil de Leads */}
-        <Card>
+        <Card className="rounded-xl shadow-md">
           <CardHeader>
             <CardTitle>Funil de Leads</CardTitle>
           </CardHeader>
@@ -141,19 +142,19 @@ const AgentDashboardPage = () => {
                   label="Novo"
                   count={counts.new || 0}
                   total={totalLeads}
-                  color="bg-blue-500"
+                  color="bg-brand"
                 />
                 <FunnelItem
                   label="Em Atendimento"
                   count={counts.in_progress || 0}
                   total={totalLeads}
-                  color="bg-yellow-500"
+                  color="bg-warning"
                 />
                 <FunnelItem
                   label="Qualificado"
                   count={counts.qualified || 0}
                   total={totalLeads}
-                  color="bg-green-500"
+                  color="bg-success"
                 />
                 <FunnelItem
                   label="Abandonado"
@@ -163,7 +164,7 @@ const AgentDashboardPage = () => {
                 />
                 <Separator className="my-4" />
                 <FunnelItem
-                  label="Vendido"
+                  label="Vendidos"
                   count={counts.sold || 0}
                   total={totalLeads}
                   color="bg-success"
@@ -174,7 +175,7 @@ const AgentDashboardPage = () => {
         </Card>
         
         {/* Placeholder for Sales History / Recent Leads */}
-        <Card>
+        <Card className="rounded-xl shadow-md">
           <CardHeader>
             <CardTitle>Histórico Recente</CardTitle>
           </CardHeader>

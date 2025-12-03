@@ -17,6 +17,7 @@ import { adminTenantService } from "@/services/zapCorretor";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
+import { PrimaryButton } from "@/components/ui/CustomButton";
 
 // Regex updated to accept 10 or 11 digits (DDD + Number)
 const phoneSchema = z.string()
@@ -96,6 +97,7 @@ const BlockPhoneForm: React.FC<BlockPhoneFormProps> = ({ onPhoneBlocked }) => {
                     // Ensure only digits are passed to the form state
                     onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
                     value={field.value.replace(/\D/g, '')}
+                    className="rounded-xl"
                 />
               </FormControl>
               <FormMessage />
@@ -104,7 +106,7 @@ const BlockPhoneForm: React.FC<BlockPhoneFormProps> = ({ onPhoneBlocked }) => {
         />
 
         <div className="flex items-end">
-            <Button type="submit" disabled={isSubmitting}>
+            <PrimaryButton type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -112,7 +114,7 @@ const BlockPhoneForm: React.FC<BlockPhoneFormProps> = ({ onPhoneBlocked }) => {
                     <Plus className="w-4 h-4 mr-2" /> Bloquear
                 </>
               )}
-            </Button>
+            </PrimaryButton>
         </div>
       </form>
     </Form>

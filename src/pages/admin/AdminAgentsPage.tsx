@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useSession } from "@/contexts/SessionContext";
+import { PrimaryButton, DestructiveButton } from "@/components/ui/CustomButton";
 
 const AdminAgentsPage = () => {
   const { profile } = useSession();
@@ -111,10 +112,10 @@ const AdminAgentsPage = () => {
   return (
     <div className="p-6 space-y-6">
       <header className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Gestão de Corretores da {tenantName}</h1>
-        <Button onClick={() => setIsCreationModalOpen(true)}>
+        <h1 className="text-3xl font-bold text-brand">Gestão de Corretores da {tenantName}</h1>
+        <PrimaryButton onClick={() => setIsCreationModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" /> Novo Corretor
-        </Button>
+        </PrimaryButton>
       </header>
       <p className="text-muted-foreground">Gerencie os corretores (AGENTs) da sua corretora, incluindo criação, ativação e desativação.</p>
 
@@ -127,7 +128,7 @@ const AdminAgentsPage = () => {
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Email (ID)</TableHead>
@@ -141,7 +142,7 @@ const AdminAgentsPage = () => {
                 {loading && (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-brand" />
                     </TableCell>
                   </TableRow>
                 )}
@@ -183,15 +184,16 @@ const AdminAgentsPage = () => {
                         size="sm" 
                         onClick={() => handleToggleActiveStatus(agent)}
                         disabled={loading}
+                        className="rounded-xl transition-all duration-200"
                       >
                         <Clock className="w-4 h-4 mr-1" /> {agent.is_active ? 'Pausar' : 'Ativar'}
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => setEditingAgent(agent)}>
+                      <Button variant="outline" size="sm" onClick={() => setEditingAgent(agent)} className="rounded-xl transition-all duration-200">
                         <Edit className="w-4 h-4 mr-1" /> Editar
                       </Button>
-                      <Button variant="destructive" size="sm" onClick={() => setAgentToDelete(agent)}>
+                      <DestructiveButton size="sm" onClick={() => setAgentToDelete(agent)}>
                         <Trash2 className="w-4 h-4 mr-1" /> Excluir
-                      </Button>
+                      </DestructiveButton>
                     </TableCell>
                   </TableRow>
                 ))}

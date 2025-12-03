@@ -10,7 +10,7 @@ const AdminWhatsappPage = () => {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold">WhatsApp Central da {tenantName}</h1>
+      <h1 className="text-3xl font-bold text-brand">WhatsApp Central da {tenantName}</h1>
       <p className="text-muted-foreground">Gerencie a conexão do número central do WhatsApp usado para receber leads e enviar notificações.</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import { superadminService, GlobalSettings } from "@/services/zapCorretor";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
+import { PrimaryButton } from "@/components/ui/CustomButton";
 
 const formSchema = z.object({
   n8nWebhookUrl: z.string().url("URL inválida.").nullable().or(z.literal("")),
@@ -85,7 +86,7 @@ const SuperadminIntegrationsPage = () => {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold">Integrações Globais</h1>
+      <h1 className="text-3xl font-bold text-brand">Integrações Globais</h1>
       <p className="text-muted-foreground">Configure integrações de terceiros e números de notificação da plataforma.</p>
 
       <Form {...form}>
@@ -157,7 +158,7 @@ const SuperadminIntegrationsPage = () => {
             </CardContent>
           </Card>
           
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <PrimaryButton type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -165,7 +166,7 @@ const SuperadminIntegrationsPage = () => {
                 <Save className="mr-2 h-4 w-4" /> Salvar Configurações Globais
               </>
             )}
-          </Button>
+          </PrimaryButton>
         </form>
       </Form>
     </div>

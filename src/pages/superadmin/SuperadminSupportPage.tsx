@@ -28,7 +28,7 @@ const statusTranslations: Record<SupportTicketStatus, string> = {
 const getStatusBadge = (status: SupportTicketStatus) => {
     switch (status) {
         case 'new':
-            return <Badge variant="default" className="bg-blue-500 hover:bg-blue-500">Novo</Badge>;
+            return <Badge variant="default" className="bg-brand hover:bg-brand/90">Novo</Badge>;
         case 'in_progress':
             return <Badge variant="warning">Em Progresso</Badge>;
         case 'closed':
@@ -96,7 +96,7 @@ const TicketDetailsModal: React.FC<TicketDetailsModalProps> = ({ ticket, onClose
                     <div className="space-y-2 pt-4">
                         <p className="font-medium">Status:</p>
                         <Select value={currentStatus} onValueChange={(val) => handleStatusUpdate(val as SupportTicketStatus)}>
-                            <SelectTrigger className="w-[200px]">
+                            <SelectTrigger className="w-[200px] rounded-xl">
                                 <SelectValue placeholder="Mudar Status" />
                             </SelectTrigger>
                             <SelectContent>
@@ -154,7 +154,7 @@ const SuperadminSupportPage = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold flex items-center gap-2">
+      <h1 className="text-3xl font-bold flex items-center gap-2 text-brand">
         <LifeBuoy className="w-7 h-7" /> Gestão de Suporte
       </h1>
       <p className="text-muted-foreground">Visualize e gerencie os tickets de suporte enviados por usuários anônimos e logados.</p>
@@ -165,7 +165,7 @@ const SuperadminSupportPage = () => {
         </CardHeader>
         <CardContent className="flex gap-4 items-center">
             <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as SupportTicketStatus | 'all')}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] rounded-xl">
                     <SelectValue placeholder="Filtrar por Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -186,7 +186,7 @@ const SuperadminSupportPage = () => {
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead>ID</TableHead>
                   <TableHead>Nome</TableHead>
@@ -200,7 +200,7 @@ const SuperadminSupportPage = () => {
                 {isLoading && (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-brand" />
                     </TableCell>
                   </TableRow>
                 )}
@@ -215,7 +215,7 @@ const SuperadminSupportPage = () => {
                       </TableCell>
                       <TableCell>{format(new Date(ticket.created_at), 'dd/MM/yyyy HH:mm')}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="outline" size="sm" onClick={() => setSelectedTicket(ticket)}>
+                        <Button variant="outline" size="sm" onClick={() => setSelectedTicket(ticket)} className="rounded-xl transition-all duration-200">
                             <MessageSquare className="w-4 h-4 mr-1" /> Ver Detalhes
                         </Button>
                       </TableCell>

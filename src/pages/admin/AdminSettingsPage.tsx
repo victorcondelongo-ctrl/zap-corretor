@@ -113,7 +113,7 @@ const AdminSettingsPage = () => {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold">Configurações da {tenantName}</h1>
+      <h1 className="text-3xl font-bold text-brand">Configurações da {tenantName}</h1>
       <p className="text-muted-foreground">Ajuste textos padrão, regras de distribuição de leads e permissões.</p>
 
       <Form {...form}>
@@ -161,7 +161,7 @@ const AdminSettingsPage = () => {
                     <FormLabel>Modo de Distribuição</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="rounded-xl">
                           <SelectValue placeholder="Selecione o modo de distribuição" />
                         </SelectTrigger>
                       </FormControl>

@@ -43,7 +43,7 @@ const SuperadminSidebar: React.FC = () => {
   return (
     <div className="flex flex-col h-full border-r bg-sidebar text-sidebar-foreground">
       <div className="p-4 border-b">
-        <h1 className="text-xl font-bold text-sidebar-primary">ZapCorretor SA</h1>
+        <h1 className="text-xl font-bold text-brand">ZapCorretor SA</h1>
       </div>
       <nav className="flex-grow p-2 space-y-1">
         {navItems.map((item) => {
@@ -55,9 +55,9 @@ const SuperadminSidebar: React.FC = () => {
               key={item.title}
               to={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-md p-3 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-xl p-3 text-sm font-medium transition-colors duration-200",
                 isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+                  ? "bg-brand text-brand-foreground hover:bg-brand/90 shadow-md"
                   : "hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground",
               )}
             >
@@ -70,7 +70,7 @@ const SuperadminSidebar: React.FC = () => {
       <div className="p-2 border-t">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 rounded-md p-3 text-sm font-medium w-full text-left text-destructive hover:bg-destructive/10 transition-colors"
+          className="flex items-center gap-3 rounded-xl p-3 text-sm font-medium w-full text-left text-destructive hover:bg-destructive/10 transition-colors duration-200"
         >
           <LogOut className="h-5 w-5" />
           Sair

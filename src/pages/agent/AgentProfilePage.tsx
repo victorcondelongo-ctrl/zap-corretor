@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { useSession } from "@/contexts/SessionContext";
 import { showSuccess, showError } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
+import { PrimaryButton, SecondaryButton } from "@/components/ui/CustomButton";
 
 const AgentProfilePage = () => {
   const { profile, user, loading, refreshProfile } = useSession();
@@ -73,11 +74,11 @@ const AgentProfilePage = () => {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold">Meu Perfil</h1>
+      <h1 className="text-3xl font-bold text-brand">Meu Perfil</h1>
       <p className="text-muted-foreground">Gerencie suas informações pessoais e credenciais de acesso.</p>
 
       {/* Informações Básicas */}
-      <Card>
+      <Card className="rounded-xl shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="w-5 h-5" /> Dados Pessoais
@@ -93,6 +94,7 @@ const AgentProfilePage = () => {
                 onChange={(e) => setFullName(e.target.value)}
                 required
                 disabled={isUpdating}
+                className="rounded-xl"
               />
             </div>
             <div className="space-y-2">
@@ -102,7 +104,7 @@ const AgentProfilePage = () => {
                 type="email"
                 value={user?.email || "N/A"}
                 disabled
-                className="bg-muted/50"
+                className="bg-muted/50 rounded-xl"
               />
             </div>
             <div className="space-y-2">
@@ -111,12 +113,12 @@ const AgentProfilePage = () => {
                 id="role"
                 value={profile.role}
                 disabled
-                className="bg-muted/50 capitalize"
+                className="bg-muted/50 rounded-xl capitalize"
               />
             </div>
-            <Button type="submit" disabled={isUpdating}>
+            <PrimaryButton type="submit" disabled={isUpdating}>
               {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Salvar Alterações"}
-            </Button>
+            </PrimaryButton>
           </form>
         </CardContent>
       </Card>
@@ -124,7 +126,7 @@ const AgentProfilePage = () => {
       <Separator />
 
       {/* Segurança */}
-      <Card>
+      <Card className="rounded-xl shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Lock className="w-5 h-5" /> Segurança
@@ -134,9 +136,9 @@ const AgentProfilePage = () => {
           <p className="text-muted-foreground">
             Use esta opção para receber um link de redefinição de senha no seu email.
           </p>
-          <Button variant="outline" onClick={handleChangePassword}>
+          <SecondaryButton onClick={handleChangePassword}>
             Trocar Senha
-          </Button>
+          </SecondaryButton>
         </CardContent>
       </Card>
     </div>

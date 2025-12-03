@@ -5,7 +5,7 @@ import { Settings } from "lucide-react";
 const SuperadminSettingsPage = () => {
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Configurações Globais</h1>
+      <h1 className="text-3xl font-bold text-brand">Configurações Globais</h1>
       <p className="text-muted-foreground">Ajustes gerais do SaaS, como nome da plataforma e identidade visual.</p>
 
       <Card>

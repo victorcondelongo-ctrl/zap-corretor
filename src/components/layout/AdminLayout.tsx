@@ -19,9 +19,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-brand-soft/50 dark:bg-gray-900">
         <header className="flex items-center justify-between p-4 border-b bg-background">
-          <h1 className="text-lg font-bold text-primary">Admin: {tenantName}</h1>
+          <h1 className="text-lg font-bold text-brand">Admin: {tenantName}</h1>
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon">
@@ -33,17 +33,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             </SheetContent>
           </Sheet>
         </header>
-        <main className="flex-grow overflow-y-auto">{children}</main>
+        <main className="flex-grow overflow-y-auto bg-background">{children}</main>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-brand-soft/50 dark:bg-gray-900">
       <aside className="w-64 flex-shrink-0">
         <AdminSidebar />
       </aside>
-      <main className="flex-grow overflow-y-auto">
+      <main className="flex-grow overflow-y-auto bg-background">
         {children}
       </main>
     </div>

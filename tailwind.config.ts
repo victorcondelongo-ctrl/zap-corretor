@@ -30,7 +30,7 @@ export default {
           soft: "hsl(var(--brand-soft))",
         },
         primary: {
-          DEFAULT: "hsl(var(--primary))", // Will map to brand
+          DEFAULT: "hsl(var(--primary))", // Maps to brand
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
@@ -44,6 +44,10 @@ export default {
         success: {
           DEFAULT: "142.1 76.2% 36.3%",
           foreground: "210 40% 98%",
+        },
+        warning: { // Added warning color for in_progress/alerts
+          DEFAULT: "48 96% 50%",
+          foreground: "222.2 84% 4.9%",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",

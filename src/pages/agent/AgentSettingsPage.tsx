@@ -23,6 +23,7 @@ import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast
 import { Badge } from "@/components/ui/badge";
 import { useSession } from "@/contexts/SessionContext";
 import AgentScheduleForm from "@/components/admin/AgentScheduleForm"; // Reusing the schedule form
+import { PrimaryButton } from "@/components/ui/CustomButton";
 
 const phoneValidator = z.string()
     .transform(val => val.replace(/\D/g, ''))
@@ -136,14 +137,14 @@ const AgentSettingsPage = () => {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold">Configurações do Corretor</h1>
+      <h1 className="text-3xl font-bold text-brand">Configurações do Corretor</h1>
       <p className="text-muted-foreground">Ajuste as configurações da IA e dos follow-ups automáticos para seus leads.</p>
 
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           
           {/* WhatsApp Alert Number (Editable only for Independent Agents) */}
-          <Card>
+          <Card className="rounded-xl shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Phone className="w-5 h-5" /> Contato e Alertas
@@ -180,7 +181,7 @@ const AgentSettingsPage = () => {
           <Separator />
           
           {/* Configuração de Escala */}
-          <Card>
+          <Card className="rounded-xl shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5" /> Configuração de Escala</CardTitle>
             </CardHeader>
@@ -192,7 +193,7 @@ const AgentSettingsPage = () => {
           <Separator />
 
           {/* AI Prompt Master */}
-          <Card>
+          <Card className="rounded-xl shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" /> Prompt Mestre da IA
@@ -227,7 +228,7 @@ const AgentSettingsPage = () => {
           <Separator />
 
           {/* Follow-up Toggles and Permissions */}
-          <Card>
+          <Card className="rounded-xl shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Zap className="w-5 h-5" /> Automação e Permissões
@@ -320,7 +321,7 @@ const AgentSettingsPage = () => {
             </CardContent>
           </Card>
           
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <PrimaryButton type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -328,7 +329,7 @@ const AgentSettingsPage = () => {
                 <Save className="mr-2 h-4 w-4" /> Salvar Configurações
               </>
             )}
-          </Button>
+          </PrimaryButton>
         </form>
       </FormProvider>
     </div>

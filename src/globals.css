@@ -32,6 +32,12 @@
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
+    
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 210 40% 98%;
+    
+    --warning: 48 96% 50%;
+    --warning-foreground: 222.2 84% 4.9%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
@@ -39,21 +45,18 @@
 
     --radius: 1rem; /* Updated radius */
 
-    --sidebar-background: 0 0% 98%;
+    /* Sidebar Colors aligned with Brand */
+    --sidebar-background: 217.2 91.2% 98%; /* Very light brand blue */
+    --sidebar-foreground: 222.2 84% 4.9%; /* Dark text */
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: var(--brand); /* Active item background */
+    --sidebar-primary-foreground: 0 0% 100%; /* Active item text */
 
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-accent: 217.2 91.2% 90%; /* Hover background */
+    --sidebar-accent-foreground: 222.2 84% 4.9%; /* Hover text */
 
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: var(--brand);
   }
 
   .dark {
@@ -85,19 +88,26 @@
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
+    
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 210 40% 98%;
+    
+    --warning: 48 96% 50%;
+    --warning-foreground: 222.2 84% 4.9%;
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: var(--brand);
     
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar Colors aligned with Brand */
+    --sidebar-background: 222.2 84% 4.9%; /* Dark background */
+    --sidebar-foreground: 210 40% 98%; /* Light text */
+    --sidebar-primary: var(--brand); /* Active item background */
+    --sidebar-primary-foreground: 0 0% 100%; /* Active item text */
+    --sidebar-accent: 217.2 32.6% 17.5%; /* Hover background */
+    --sidebar-accent-foreground: 210 40% 98%; /* Hover text */
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: var(--brand);
   }
 }
 

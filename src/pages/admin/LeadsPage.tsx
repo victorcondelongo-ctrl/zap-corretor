@@ -26,6 +26,7 @@ import { Loader2, Search, CheckCircle, XCircle, MessageSquare, UserPlus, Refresh
 import { format } from "date-fns";
 import LeadAssignmentModal from "@/components/admin/LeadAssignmentModal";
 import { useSession } from "@/contexts/SessionContext";
+import { PrimaryButton, SecondaryButton } from "@/components/ui/CustomButton";
 
 // Mapa de tradução para os status
 const statusTranslations: Record<LeadStatus | 'all', string> = {
@@ -291,7 +292,7 @@ const LeadsPage = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Gestão de Leads da {tenantName}</h1>
+      <h1 className="text-3xl font-bold text-brand">Gestão de Leads da {tenantName}</h1>
 
       {/* Filters */}
       <Card>
@@ -301,7 +302,7 @@ const LeadsPage = () => {
         <CardContent className="flex flex-col md:flex-row gap-4">
           {/* Status Filter */}
           <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as LeadStatus | 'all')}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] rounded-xl">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -315,7 +316,7 @@ const LeadsPage = () => {
           
           {/* Agent Filter */}
           <Select value={agentFilter} onValueChange={(value) => setAgentFilter(value)}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-[200px] rounded-xl">
               <SelectValue placeholder="Corretor" />
             </SelectTrigger>
             <SelectContent>
@@ -334,10 +335,11 @@ const LeadsPage = () => {
               value={currentPhoneInput}
               onChange={(e) => setCurrentPhoneInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="rounded-xl"
             />
-            <Button onClick={handleSearch} disabled={loading}>
+            <SecondaryButton onClick={handleSearch} disabled={loading}>
               <Search className="w-4 h-4 mr-2" /> Buscar
-            </Button>
+            </SecondaryButton>
           </div>
         </CardContent>
       </Card>
@@ -350,7 +352,7 @@ const LeadsPage = () => {
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead>Telefone</TableHead>
                   <TableHead>Nome</TableHead>
@@ -385,7 +387,7 @@ const LeadsPage = () => {
                           {lead.last_interaction_at ? format(new Date(lead.last_interaction_at), 'dd/MM/yy HH:mm') : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right space-x-2 flex justify-end items-center">
-                          <Button variant="outline" size="sm" onClick={() => setSelectedLeadId(lead.id)}>
+                          <Button variant="outline" size="sm" onClick={() => setSelectedLeadId(lead.id)} className="rounded-xl transition-all duration-200">
                             Detalhes
                           </Button>
                           
@@ -397,6 +399,7 @@ const LeadsPage = () => {
                                 onClick={() => handleAssignNextAgent(lead.id)}
                                 disabled={loading}
                                 title="Atribuir ao próximo agente (Round-Robin)"
+                                className="rounded-xl transition-all duration-200"
                               >
                                 <RefreshCw className="w-4 h-4" />
                               </Button>
@@ -406,17 +409,19 @@ const LeadsPage = () => {
                                 onClick={() => setLeadToAssign(lead)}
                                 disabled={loading}
                                 title="Atribuição Manual"
+                                className="rounded-xl transition-all duration-200"
                               >
                                 <UserPlus className="w-4 h-4" />
                               </Button>
-                              <Button 
+                              <PrimaryButton 
                                 variant="success" 
                                 size="sm" 
                                 onClick={() => handleMarkAsSold(lead.id)}
                                 disabled={loading}
+                                className="bg-success hover:bg-success/90"
                               >
                                 <CheckCircle className="w-4 h-4 mr-1" /> Vender
-                              </Button>
+                              </PrimaryButton>
                             </>
                           )}
                         </TableCell>

@@ -24,6 +24,7 @@ import { format } from "date-fns";
 import LeadConversation from "@/components/agent/LeadConversation";
 import LeadEditForm from "@/components/agent/LeadEditForm";
 import { Separator } from "@/components/ui/separator";
+import { PrimaryButton, SecondaryButton } from "@/components/ui/CustomButton";
 
 // Helper component for status badge styling
 const StatusBadge: React.FC<{ status: LeadStatus }> = ({ status }) => {
@@ -119,7 +120,7 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({ leadId, onClose, on
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="text-lg">{details.lead.name || "Sem Nome"}</CardTitle>
-                  <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)}>
+                  <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)} className="rounded-xl transition-all duration-200">
                     <Edit className="w-4 h-4 mr-2" /> {isEditing ? 'Cancelar' : 'Editar Dados'}
                   </Button>
                 </CardHeader>
@@ -249,7 +250,7 @@ const MyLeadsPage = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Meus Leads</h1>
+      <h1 className="text-3xl font-bold text-brand">Meus Leads</h1>
 
       {/* Filters and Export */}
       <Card>
@@ -258,7 +259,7 @@ const MyLeadsPage = () => {
         </CardHeader>
         <CardContent className="flex flex-col md:flex-row gap-4 justify-between items-center">
           <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as LeadStatus | 'all')}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] rounded-xl">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -270,9 +271,9 @@ const MyLeadsPage = () => {
             </SelectContent>
           </Select>
           
-          <Button variant="outline" onClick={handleExportLeads} disabled={loading || leads.length === 0}>
+          <SecondaryButton onClick={handleExportLeads} disabled={loading || leads.length === 0}>
             <FileText className="w-4 h-4 mr-2" /> Exportar Leads ({leads.length})
-          </Button>
+          </SecondaryButton>
         </CardContent>
       </Card>
 
@@ -284,7 +285,7 @@ const MyLeadsPage = () => {
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead>Telefone</TableHead>
                   <TableHead>Nome</TableHead>
@@ -314,18 +315,18 @@ const MyLeadsPage = () => {
                       {lead.last_interaction_at ? format(new Date(lead.last_interaction_at), 'dd/MM/yy HH:mm') : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => setSelectedLeadId(lead.id)}>
+                      <Button variant="outline" size="sm" onClick={() => setSelectedLeadId(lead.id)} className="rounded-xl transition-all duration-200">
                         Detalhes
                       </Button>
                       {lead.status !== 'sold' && (
-                        <Button 
-                          variant="success" 
+                        <PrimaryButton 
                           size="sm" 
                           onClick={() => handleMarkAsSold(lead.id)}
                           disabled={loading}
+                          className="bg-success hover:bg-success/90"
                         >
                           <CheckCircle className="w-4 h-4 mr-1" /> Vender
-                        </Button>
+                        </PrimaryButton>
                       )}
                     </TableCell>
                   </TableRow>

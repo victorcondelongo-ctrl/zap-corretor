@@ -112,7 +112,7 @@ const AdminBlockedPhonesPage = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Telefones Bloqueados da {tenantName}</h1>
+      <h1 className="text-3xl font-bold text-brand">Telefones Bloqueados da {tenantName}</h1>
       <p className="text-muted-foreground">Gerencie a lista de telefones que a IA não deve responder (pausar a IA para quem já é cliente).</p>
 
       <Card className="rounded-xl shadow-md">
@@ -149,7 +149,7 @@ const AdminBlockedPhonesPage = () => {
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead>Telefone</TableHead>
                   <TableHead>Bloqueado Em</TableHead>

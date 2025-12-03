@@ -366,7 +366,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
         </PrimaryButton>
         
         <div className="text-center mt-4">
-            <Button variant="link" type="button" onClick={onLoginClick} className="text-sm">
+            <Button variant="link" type="button" onClick={onLoginClick} className="text-sm text-brand hover:text-brand/80">
                 Já tem uma conta? Faça login
             </Button>
         </div>

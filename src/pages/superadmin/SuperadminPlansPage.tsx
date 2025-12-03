@@ -5,7 +5,7 @@ import { DollarSign } from "lucide-react";
 const SuperadminPlansPage = () => {
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Planos e Limites Globais</h1>
+      <h1 className="text-3xl font-bold text-brand">Planos e Limites Globais</h1>
       <p className="text-muted-foreground">Gerencie os parâmetros padrão da plataforma e os planos de assinatura.</p>
 
       <Card>

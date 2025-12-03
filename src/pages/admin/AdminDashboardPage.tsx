@@ -167,7 +167,7 @@ const AdminDashboardPage = () => {
   if (!stats) {
     return (
       <div className="p-8 text-center">
-        <h1 className="text-2xl font-bold mb-2">Dashboard da {tenantName}</h1>
+        <h1 className="text-2xl font-bold mb-2 text-brand">Dashboard da {tenantName}</h1>
         <p className="text-muted-foreground">Nenhum dado disponível para exibição.</p>
       </div>
     );
@@ -177,14 +177,14 @@ const AdminDashboardPage = () => {
 
   return (
     <div className="p-6 space-y-8">
-      <h1 className="text-3xl font-bold">Dashboard da {tenantName}</h1>
+      <h1 className="text-3xl font-bold text-brand">Dashboard da {tenantName}</h1>
 
       {/* Linha de Cards Principais */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4">
         <MetricCard title="Total de Leads" value={stats.total_leads} icon={<Users className="h-4 w-4 text-muted-foreground" />} />
         <MetricCard title="Novos" value={stats.leads_new} icon={<Zap className="h-4 w-4 text-brand" />} />
-        <MetricCard title="Em Atendimento" value={stats.leads_in_progress} icon={<Clock className="h-4 w-4 text-yellow-500" />} />
-        <MetricCard title="Qualificados" value={stats.leads_qualified} icon={<Target className="h-4 w-4 text-green-500" />} />
+        <MetricCard title="Em Atendimento" value={stats.leads_in_progress} icon={<Clock className="h-4 w-4 text-warning" />} />
+        <MetricCard title="Qualificados" value={stats.leads_qualified} icon={<Target className="h-4 w-4 text-success" />} />
         <MetricCard title="Abandonados" value={stats.leads_abandoned} icon={<XCircle className="h-4 w-4 text-destructive" />} />
         <MetricCard title="Vendidos (Leads)" value={stats.leads_sold} icon={<CheckCircle className="h-4 w-4 text-success" />} />
         <MetricCard title="Total de Vendas" value={stats.total_sales} icon={<DollarSign className="h-4 w-4 text-brand" />} />
@@ -211,13 +211,13 @@ const AdminDashboardPage = () => {
                   label="Em Atendimento"
                   count={stats.leads_in_progress}
                   total={totalLeads}
-                  color="bg-yellow-500"
+                  color="bg-warning"
                 />
                 <FunnelItem
                   label="Qualificados"
                   count={stats.leads_qualified}
                   total={totalLeads}
-                  color="bg-green-500"
+                  color="bg-success"
                 />
                 <FunnelItem
                   label="Abandonados"

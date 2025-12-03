@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { SecondaryButton } from "@/components/ui/CustomButton";
 
 const getStatusBadge = (status: string) => {
     switch (status) {
@@ -52,7 +53,7 @@ const SuperadminTenantDetailPage = () => {
   if (!tenant) {
     return (
       <div className="p-8 text-center">
-        <h1 className="text-2xl font-bold mb-2">Corretora Não Encontrada</h1>
+        <h1 className="text-2xl font-bold mb-2 text-brand">Corretora Não Encontrada</h1>
         <p className="text-muted-foreground">O ID da corretora {tenantId} não corresponde a nenhum registro.</p>
       </div>
     );
@@ -67,13 +68,13 @@ const SuperadminTenantDetailPage = () => {
     <div className="p-6 space-y-8">
       <header className="border-b pb-4">
         <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold flex items-center gap-3">
+            <h1 className="text-3xl font-bold flex items-center gap-3 text-brand">
                 {tenant.name}
                 {getStatusBadge(tenant.plan_status)}
             </h1>
-            <Button variant="outline" size="sm">
+            <SecondaryButton size="sm">
                 <Edit className="w-4 h-4 mr-2" /> Editar Configurações
-            </Button>
+            </SecondaryButton>
         </div>
         <div className="mt-2 text-sm text-muted-foreground flex gap-4 flex-wrap">
             <span>ID: {tenant.id.substring(0, 8)}...</span>

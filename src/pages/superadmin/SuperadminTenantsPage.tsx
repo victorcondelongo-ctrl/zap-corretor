@@ -17,6 +17,7 @@ import { Loader2, Plus, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import TenantCreationModal from "@/components/superadmin/TenantCreationModal";
+import { PrimaryButton } from "@/components/ui/CustomButton";
 
 // Helper component for status badge styling
 const PlanStatusBadge: React.FC<{ status: string }> = ({ status }) => {
@@ -75,10 +76,10 @@ const SuperadminTenantsPage = () => {
   return (
     <div className="p-6 space-y-6">
       <header className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Corretoras</h1>
-        <Button onClick={() => setIsModalOpen(true)}>
+        <h1 className="text-3xl font-bold text-brand">Corretoras</h1>
+        <PrimaryButton onClick={() => setIsModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" /> Nova Corretora/Corretor
-        </Button>
+        </PrimaryButton>
       </header>
 
       {/* Filters (Simplified for MVP) */}
@@ -99,7 +100,7 @@ const SuperadminTenantsPage = () => {
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>ID</TableHead>
@@ -113,7 +114,7 @@ const SuperadminTenantsPage = () => {
                 {isLoading && (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-brand" />
                     </TableCell>
                   </TableRow>
                 )}
@@ -131,7 +132,7 @@ const SuperadminTenantsPage = () => {
                       <TableCell>{tenant.base_monthly_leads_limit.toLocaleString()}</TableCell>
                       <TableCell className="text-right">
                         <Link to={`/superadmin/tenants/${tenant.id}`}>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" className="rounded-xl transition-all duration-200">
                                 <Eye className="w-4 h-4 mr-1" /> Ver detalhes
                             </Button>
                         </Link>
