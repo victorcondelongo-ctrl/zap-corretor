@@ -9,10 +9,7 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  allowedRoles,
-  children,
-}) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children }) => {
   const { user, profile, loading } = useSession();
 
   console.log("[ProtectedRoute] render:", {
@@ -32,42 +29,38 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!user) {
-    // User is not logged in, redirect to login page
     return <Navigate to="/login" replace />;
   }
 
   if (!profile) {
-    // User is logged in but profile data is missing
+    // Não entra em loop, apenas mostra erro claro
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
           <ShieldOff className="h-10 w-10 text-destructive mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
-            Erro de Perfil
+            Erro ao carregar perfil
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Seu perfil de usuário não pôde ser carregado. Por favor, tente
-            novamente.
+            Não foi possível carregar seus dados de perfil. Verifique se existe um registro na tabela
+            <code> profiles </code> para esse usuário.
           </p>
-          <Navigate to="/login" replace />
         </div>
       </div>
     );
   }
 
   if (!allowedRoles.includes(profile.role)) {
-    // User is logged in but does not have the required role
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
           <ShieldOff className="h-10 w-10 text-destructive mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
-            Acesso Negado
+            Acesso negado
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
             Você não tem permissão para acessar esta página.
           </p>
-          <Navigate to="/" replace />
         </div>
       </div>
     );

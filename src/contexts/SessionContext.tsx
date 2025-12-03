@@ -12,7 +12,7 @@ import { User } from "@supabase/supabase-js";
 interface SessionContextType {
   user: User | null;
   profile: ZapProfile | null;
-  loading: boolean;
+  loading: boolean;           // só se refere ao "user"
   refreshProfile: () => Promise<void>;
 }
 
@@ -23,8 +23,14 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
   const [profile, setProfile] = useState<ZapProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (currentUser: User) => {
-    console.log("[SessionContext] fetchProfile() start");
+  const fetchProfile = useCallback(async () => {
+    if (!user) {
+      console.log("[SessionContext] fetchProfile(): sem user, limpando profile");
+      setProfile(null);
+      return;
+    }
+
+    console.log("[SessionContext] fetchProfile() start para user", user.id);
     try {
       const p = await getCurrentProfile();
       console.log("[SessionContext] fetchProfile() success", p);
@@ -33,12 +39,11 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
       console.error("[SessionContext] fetchProfile() error", error);
       setProfile(null);
     }
-  }, []);
+  }, [user]);
 
   const refreshProfile = useCallback(async () => {
-    if (!user) return;
-    await fetchProfile(user);
-  }, [user, fetchProfile]);
+    await fetchProfile();
+  }, [fetchProfile]);
 
   useEffect(() => {
     let isMounted = true;
@@ -46,6 +51,7 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
     const loadInitial = async () => {
       console.log("[SessionContext] loadInitial() start");
       setLoading(true);
+
       try {
         const { data, error } = await supabase.auth.getUser();
         if (!isMounted) return;
@@ -58,14 +64,13 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
         console.log("[SessionContext] loadInitial() user =", currentUser);
         setUser(currentUser);
 
+        // IMPORTANTE: não await aqui
         if (currentUser) {
-          // 2. Se houver usuário, tenta buscar o perfil
-          await fetchProfile(currentUser);
+          void fetchProfile();
         } else {
           setProfile(null);
         }
       } finally {
-        // 3. SEMPRE finaliza o loading
         if (isMounted) {
           console.log("[SessionContext] loadInitial() finished → setLoading(false)");
           setLoading(false);
@@ -75,22 +80,17 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
 
     loadInitial();
 
-    // Listener para mudanças de estado (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("[SessionContext] onAuthStateChange:", event, session);
-        
-        // Ignora INITIAL_SESSION, pois já tratamos no loadInitial
-        if (event === 'INITIAL_SESSION') return;
+        if (event === "INITIAL_SESSION") return;
 
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
         if (currentUser) {
-          // Se logou, busca o perfil
-          await fetchProfile(currentUser);
+          void fetchProfile();
         } else {
-          // Se deslogou, limpa o perfil
           setProfile(null);
         }
       }

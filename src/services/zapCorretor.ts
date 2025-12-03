@@ -81,8 +81,13 @@ export interface ZapTenant {
  */
 export async function getCurrentProfile(): Promise<ZapProfile> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    console.log("[getCurrentProfile] start");
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    console.log("[getCurrentProfile] after getUser", { user, userError });
 
+    if (userError) {
+      throw userError;
+    }
     if (!user) {
       throw new Error("User not authenticated.");
     }
@@ -91,21 +96,17 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
       .from("profiles")
       .select("*")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();     // Usando maybeSingle para evitar erro PGRST116
+
+    console.log("[getCurrentProfile] query result", { profile, error });
 
     if (error) {
       console.error("Supabase Profile Fetch Error:", error);
-      // Supabase .single() returns error if 0 rows found, or if RLS denies access.
-      // We check if the error is due to no rows found (code 'PGRST116') or a genuine error.
-      if (error.code === 'PGRST116') {
-        throw new Error(`Profile not found for user ID: ${user.id}. Please ensure the user has a corresponding entry in the 'profiles' table.`);
-      }
       throw new Error(`Failed to fetch profile: ${error.message}`);
     }
-    
+
     if (!profile) {
-        // Should be caught by the error check above, but as a safeguard:
-        throw new Error(`Profile data is null for user ID: ${user.id}.`);
+      throw new Error(`Profile not found for user ID: ${user.id}`);
     }
 
     // Ensure tenant_id is correctly typed as string | null
@@ -114,9 +115,10 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
       tenant_id: profile.tenant_id as string | null,
     };
 
+    console.log("[getCurrentProfile] success, returning profile");
     return typedProfile;
   } catch (e) {
-    console.error("Error in getCurrentProfile:", e);
+    console.error("[getCurrentProfile] error", e);
     throw e;
   }
 }
