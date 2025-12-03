@@ -30,8 +30,8 @@ const Index = () => {
           dashboardText = "Go to Admin Dashboard";
           break;
         case "AGENT":
-          dashboardLink = "/agent/leads";
-          dashboardText = "Go to My Leads";
+          dashboardLink = "/agent/dashboard"; // Updated redirect path
+          dashboardText = "Go to Agent Dashboard";
           break;
       }
 

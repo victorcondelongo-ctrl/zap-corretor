@@ -32,7 +32,7 @@ const Login: React.FC = () => {
           redirectPath = "/admin/dashboard";
           break;
         case "AGENT":
-          redirectPath = "/agent/leads";
+          redirectPath = "/agent/dashboard"; // Updated redirect path
           break;
       }
       

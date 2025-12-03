@@ -70,6 +70,20 @@ export interface ZapTenant {
   created_at: string;
 }
 
+export interface ZapAgentSettings {
+  agent_id: string;
+  ai_prompt: string | null;
+  followup_30min_enabled: boolean;
+  followup_24h_enabled: boolean;
+}
+
+export interface LeadUpdateData {
+  name?: string | null;
+  cpf?: string | null;
+  cep?: string | null;
+  plate?: string | null;
+}
+
 // =================================================================
 // 2. GENERIC CONTEXT FUNCTIONS
 // =================================================================
@@ -376,6 +390,92 @@ export const agentService = {
 
     return data as boolean;
   },
+  
+  /**
+   * Fetches the current agent's settings.
+   */
+  async getSettings(): Promise<ZapAgentSettings> {
+    const profile = await requireRole(["AGENT"]);
+
+    const { data, error } = await supabase
+      .from("agent_settings")
+      .select("*")
+      .eq("agent_id", profile.id)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to fetch agent settings: ${error.message}`);
+    }
+    
+    // If settings don't exist, return defaults
+    if (!data) {
+        return {
+            agent_id: profile.id,
+            ai_prompt: null,
+            followup_30min_enabled: true,
+            followup_24h_enabled: true,
+        };
+    }
+
+    return data as ZapAgentSettings;
+  },
+
+  /**
+   * Saves or updates the current agent's settings.
+   */
+  async saveSettings(settings: Partial<ZapAgentSettings>): Promise<ZapAgentSettings> {
+    const profile = await requireRole(["AGENT"]);
+    
+    const updateData = {
+        ...settings,
+        agent_id: profile.id,
+        updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from("agent_settings")
+      .upsert(updateData, { onConflict: 'agent_id' })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to save agent settings: ${error.message}`);
+    }
+
+    return data as ZapAgentSettings;
+  },
+  
+  /**
+   * Updates specific fields of a lead.
+   */
+  async updateLeadData(leadId: string, updateData: LeadUpdateData): Promise<ZapLead> {
+    await requireRole(["AGENT"]);
+    
+    // RLS on 'leads' table ensures AGENT can only update their own leads.
+    const { data, error } = await supabase
+      .from("leads")
+      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .eq("id", leadId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update lead data: ${error.message}`);
+    }
+
+    return data as ZapLead;
+  },
+  
+  /**
+   * Placeholder for export logic.
+   */
+  async exportMyLeads(status?: LeadStatus): Promise<void> {
+      // In a real scenario, this would call an Edge Function or RPC to generate CSV/XLSX
+      const profile = await requireRole(["AGENT"]);
+      console.log(`Exporting leads for agent ${profile.id} with status: ${status}`);
+      // Simulate export success
+      return;
+  }
 };
 
 // =================================================================

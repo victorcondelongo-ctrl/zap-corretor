@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Outlet, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet, Link, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LeadsPage from "./pages/admin/LeadsPage";
@@ -17,6 +17,7 @@ import ProtectedRoute from "./components/routing/ProtectedRoute";
 import MyLeadsPage from "./pages/agent/MyLeadsPage";
 import AgentSettingsPage from "./pages/agent/AgentSettingsPage";
 import AgentProfilePage from "./pages/agent/AgentProfilePage";
+import AgentDashboardPage from "./pages/agent/AgentDashboardPage"; // Import new dashboard
 import SuperadminLayout from "./components/layout/SuperadminLayout";
 import AdminLayout from "./components/layout/AdminLayout";
 import SuperadminDashboardPage from "./pages/superadmin/SuperadminDashboardPage";
@@ -28,14 +29,15 @@ import SuperadminTenantDetailPage from "./pages/superadmin/SuperadminTenantDetai
 
 const queryClient = new QueryClient();
 
-// Layout simples para o Agente (sem sidebar complexa)
+// Layout simples para o Agente (com navegação atualizada)
 const AgentLayout = () => (
   <div className="min-h-screen bg-background">
     <header className="p-4 border-b shadow-sm">
       <nav className="flex justify-between items-center max-w-7xl mx-auto">
-        <h1 className="text-xl font-bold text-primary">Meus Leads</h1>
+        <h1 className="text-xl font-bold text-primary">ZapCorretor Agente</h1>
         <div className="space-x-4">
-          <Link to="/agent/leads" className="text-sm font-medium hover:text-primary">Leads</Link>
+          <Link to="/agent/dashboard" className="text-sm font-medium hover:text-primary">Dashboard</Link>
+          <Link to="/agent/leads" className="text-sm font-medium hover:text-primary">Meus Leads</Link>
           <Link to="/agent/settings" className="text-sm font-medium hover:text-primary">Configurações</Link>
           <Link to="/agent/profile" className="text-sm font-medium hover:text-primary">Perfil</Link>
         </div>
@@ -106,6 +108,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             >
+              <Route index element={<Navigate to="dashboard" replace />} /> {/* Redirect /agent to /agent/dashboard */}
+              <Route path="dashboard" element={<AgentDashboardPage />} />
               <Route path="leads" element={<MyLeadsPage />} />
               <Route path="settings" element={<AgentSettingsPage />} />
               <Route path="profile" element={<AgentProfilePage />} />
