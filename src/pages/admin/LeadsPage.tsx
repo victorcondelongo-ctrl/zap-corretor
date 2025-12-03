@@ -22,8 +22,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, CheckCircle, XCircle, MessageSquare } from "lucide-react";
+import { Loader2, Search, CheckCircle, XCircle, MessageSquare, UserPlus, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
+import LeadAssignmentModal from "@/components/admin/LeadAssignmentModal";
 
 // Mapa de tradução para os status
 const statusTranslations: Record<LeadStatus | 'all', string> = {
@@ -159,15 +160,18 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({ leadId, onClose }) 
 
 const LeadsPage = () => {
   const [profile, setProfile] = useState<ZapProfile | null>(null);
+  const [agents, setAgents] = useState<ZapProfile[]>([]);
   const [leads, setLeads] = useState<ZapLead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
+  const [agentFilter, setAgentFilter] = useState<string | 'all'>('all');
   const [phoneSearch, setPhoneSearch] = useState('');
   const [currentPhoneInput, setCurrentPhoneInput] = useState('');
 
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [leadToAssign, setLeadToAssign] = useState<ZapLead | null>(null);
 
   // --- Initialization and Role Check ---
   useEffect(() => {
@@ -180,6 +184,9 @@ const LeadsPage = () => {
           return;
         }
         setProfile(p);
+        // Fetch agents for filtering and assignment
+        const fetchedAgents = await adminTenantService.listAgents();
+        setAgents(fetchedAgents.filter(a => a.role === 'AGENT'));
       } catch (err) {
         console.error(err);
         setError("Erro de autenticação ou perfil não encontrado.");
@@ -199,6 +206,7 @@ const LeadsPage = () => {
     try {
       const params = {
         status: statusFilter === 'all' ? undefined : statusFilter,
+        agentId: agentFilter === 'all' ? undefined : agentFilter,
         phone: phoneSearch || undefined,
       };
       
@@ -210,7 +218,7 @@ const LeadsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [profile, statusFilter, phoneSearch]);
+  }, [profile, statusFilter, agentFilter, phoneSearch]);
 
   useEffect(() => {
     if (profile) {
@@ -223,19 +231,35 @@ const LeadsPage = () => {
   const handleSearch = () => {
     setPhoneSearch(currentPhoneInput);
   };
+  
+  const handleLeadUpdated = (updatedLead: ZapLead) => {
+      // Update the lead list after assignment or sale
+      setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
+  };
 
   const handleMarkAsSold = async (leadId: string) => {
     const toastId = showLoading("Marcando lead como vendido...");
     try {
       const updatedLead = await adminTenantService.markLeadAsSold(leadId);
-      
-      // Update local state
-      setLeads(prev => prev.map(l => l.id === leadId ? updatedLead : l));
-      
+      handleLeadUpdated(updatedLead);
       showSuccess("Lead marcado como vendido com sucesso!");
     } catch (err) {
       console.error("Error marking lead as sold:", err);
       showError(err instanceof Error ? err.message : "Falha ao marcar lead como vendido.");
+    } finally {
+      dismissToast(toastId);
+    }
+  };
+  
+  const handleAssignNextAgent = async (leadId: string) => {
+    const toastId = showLoading("Atribuindo ao próximo corretor...");
+    try {
+      const updatedLead = await adminTenantService.assignLeadToNextAgent(leadId);
+      handleLeadUpdated(updatedLead);
+      showSuccess("Lead atribuído ao próximo corretor com sucesso!");
+    } catch (err) {
+      console.error("Error assigning lead:", err);
+      showError(err instanceof Error ? err.message : "Falha ao atribuir o lead. Verifique se há agentes ativos.");
     } finally {
       dismissToast(toastId);
     }
@@ -260,11 +284,8 @@ const LeadsPage = () => {
     );
   }
 
-  if (!profile) {
-    return null; // Should be covered by loading/error state
-  }
-
   const leadStatuses: (LeadStatus | 'all')[] = ['all', 'new', 'in_progress', 'qualified', 'abandoned', 'sold'];
+  const agentOptions = [{ id: 'all', full_name: 'Todos os Corretores' }, ...agents];
 
   return (
     <div className="p-6 space-y-6">
@@ -276,6 +297,7 @@ const LeadsPage = () => {
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col md:flex-row gap-4">
+          {/* Status Filter */}
           <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as LeadStatus | 'all')}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
@@ -288,7 +310,22 @@ const LeadsPage = () => {
               ))}
             </SelectContent>
           </Select>
+          
+          {/* Agent Filter */}
+          <Select value={agentFilter} onValueChange={(value) => setAgentFilter(value)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Corretor" />
+            </SelectTrigger>
+            <SelectContent>
+              {agentOptions.map(agent => (
+                <SelectItem key={agent.id} value={agent.id}>
+                  {agent.full_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
+          {/* Phone Search */}
           <div className="flex gap-2 flex-grow">
             <Input
               placeholder="Buscar por telefone (ex: 55119...)"
@@ -330,35 +367,60 @@ const LeadsPage = () => {
                     </TableCell>
                   </TableRow>
                 )}
-                {leads.map((lead) => (
-                  <TableRow key={lead.id}>
-                    <TableCell className="font-medium">{lead.phone}</TableCell>
-                    <TableCell>{lead.name || 'N/A'}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={lead.status} />
-                    </TableCell>
-                    <TableCell>{lead.agent_id || 'Não Atribuído'}</TableCell>
-                    <TableCell>{format(new Date(lead.created_at), 'dd/MM/yy')}</TableCell>
-                    <TableCell>
-                      {lead.last_interaction_at ? format(new Date(lead.last_interaction_at), 'dd/MM/yy HH:mm') : 'N/A'}
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => setSelectedLeadId(lead.id)}>
-                        Detalhes
-                      </Button>
-                      {lead.status !== 'sold' && (
-                        <Button 
-                          variant="success" 
-                          size="sm" 
-                          onClick={() => handleMarkAsSold(lead.id)}
-                          disabled={loading}
-                        >
-                          <CheckCircle className="w-4 h-4 mr-1" /> Vender
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {leads.map((lead) => {
+                    const assignedAgent = agents.find(a => a.id === lead.agent_id);
+                    
+                    return (
+                      <TableRow key={lead.id}>
+                        <TableCell className="font-medium">{lead.phone}</TableCell>
+                        <TableCell>{lead.name || 'N/A'}</TableCell>
+                        <TableCell>
+                          <StatusBadge status={lead.status} />
+                        </TableCell>
+                        <TableCell>{assignedAgent?.full_name || 'Não Atribuído'}</TableCell>
+                        <TableCell>{format(new Date(lead.created_at), 'dd/MM/yy')}</TableCell>
+                        <TableCell>
+                          {lead.last_interaction_at ? format(new Date(lead.last_interaction_at), 'dd/MM/yy HH:mm') : 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right space-x-2 flex justify-end items-center">
+                          <Button variant="outline" size="sm" onClick={() => setSelectedLeadId(lead.id)}>
+                            Detalhes
+                          </Button>
+                          
+                          {lead.status !== 'sold' && (
+                            <>
+                              <Button 
+                                variant="secondary" 
+                                size="sm" 
+                                onClick={() => handleAssignNextAgent(lead.id)}
+                                disabled={loading}
+                                title="Atribuir ao próximo agente (Round-Robin)"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="secondary" 
+                                size="sm" 
+                                onClick={() => setLeadToAssign(lead)}
+                                disabled={loading}
+                                title="Atribuição Manual"
+                              >
+                                <UserPlus className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="success" 
+                                size="sm" 
+                                onClick={() => handleMarkAsSold(lead.id)}
+                                disabled={loading}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" /> Vender
+                              </Button>
+                            </>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -370,6 +432,17 @@ const LeadsPage = () => {
         leadId={selectedLeadId} 
         onClose={() => setSelectedLeadId(null)} 
       />
+      
+      {/* Manual Assignment Modal */}
+      {leadToAssign && (
+        <LeadAssignmentModal
+          isOpen={!!leadToAssign}
+          onClose={() => setLeadToAssign(null)}
+          lead={leadToAssign}
+          agents={agents}
+          onLeadAssigned={handleLeadUpdated}
+        />
+      )}
     </div>
   );
 };

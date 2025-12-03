@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type ZapRole = "SUPERADMIN" | "ADMIN_TENANT" | "AGENT";
 export type LeadStatus = "new" | "in_progress" | "qualified" | "abandoned" | "sold";
 export type SenderType = "lead" | "ai" | "agent";
+export type DistributionMode = "sequential" | "random" | "weighted" | "schedule";
 
 export interface ZapProfile {
   id: string;
@@ -14,6 +15,8 @@ export interface ZapProfile {
   role: ZapRole;
   tenant_id: string | null;
   is_active: boolean;
+  // New field for individual export permission (to be added to DB later if needed, but defined here for future use)
+  can_export_leads?: boolean; 
 }
 
 export interface ZapLead {
@@ -75,6 +78,13 @@ export interface ZapAgentSettings {
   ai_prompt: string | null;
   followup_30min_enabled: boolean;
   followup_24h_enabled: boolean;
+}
+
+export interface ZapTenantSettings {
+  tenant_id: string;
+  distribution_mode: DistributionMode;
+  default_ai_prompt: string | null;
+  agents_can_export: boolean;
 }
 
 export interface LeadUpdateData {
@@ -166,16 +176,37 @@ export const adminTenantService = {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id, full_name, role, tenant_id, is_active, created_at")
       .eq("tenant_id", profile.tenant_id)
-      .eq("role", "AGENT")
-      .eq("is_active", true);
+      .eq("role", "AGENT"); // List all agents, active or not
 
     if (error) {
       throw new Error(`Failed to list agents: ${error.message}`);
     }
 
     return data as ZapProfile[];
+  },
+  
+  /**
+   * Updates an agent's profile (name and active status).
+   */
+  async updateAgentProfile(agentId: string, updateData: { full_name?: string, is_active?: boolean }): Promise<ZapProfile> {
+    const profile = await requireRole(["ADMIN_TENANT"]);
+    
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .eq("id", agentId)
+      .eq("tenant_id", profile.tenant_id) // RLS check is redundant but good practice
+      .eq("role", "AGENT") // Ensure we only update agents
+      .select("id, full_name, role, tenant_id, is_active, created_at")
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update agent profile: ${error.message}`);
+    }
+
+    return data as ZapProfile;
   },
 
   /**
@@ -295,6 +326,60 @@ export const adminTenantService = {
     };
 
     return stats;
+  },
+
+  /**
+   * Fetches the current tenant's settings.
+   */
+  async getSettings(): Promise<ZapTenantSettings> {
+    const profile = await requireRole(["ADMIN_TENANT"]);
+
+    const { data, error } = await supabase
+      .from("tenant_settings")
+      .select("tenant_id, distribution_mode, default_ai_prompt, agents_can_export")
+      .eq("tenant_id", profile.tenant_id)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to fetch tenant settings: ${error.message}`);
+    }
+    
+    // If settings don't exist, return defaults
+    if (!data) {
+        return {
+            tenant_id: profile.tenant_id!,
+            distribution_mode: 'sequential',
+            default_ai_prompt: null,
+            agents_can_export: false,
+        };
+    }
+
+    return data as ZapTenantSettings;
+  },
+
+  /**
+   * Saves or updates the current tenant's settings.
+   */
+  async saveSettings(settings: Partial<ZapTenantSettings>): Promise<ZapTenantSettings> {
+    const profile = await requireRole(["ADMIN_TENANT"]);
+    
+    const updateData = {
+        ...settings,
+        tenant_id: profile.tenant_id!,
+        updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from("tenant_settings")
+      .upsert(updateData, { onConflict: 'tenant_id' })
+      .select("tenant_id, distribution_mode, default_ai_prompt, agents_can_export")
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to save tenant settings: ${error.message}`);
+    }
+
+    return data as ZapTenantSettings;
   },
 
   /**

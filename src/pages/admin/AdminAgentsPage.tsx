@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Plus, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Users, Plus, Loader2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AgentCreationModal from "@/components/admin/AgentCreationModal";
+import AgentEditModal from "@/components/admin/AgentEditModal";
 import { adminTenantService, ZapProfile } from "@/services/zapCorretor";
 import { showError } from "@/utils/toast";
 import {
@@ -17,7 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 const AdminAgentsPage = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
+  const [editingAgent, setEditingAgent] = useState<ZapProfile | null>(null);
   const [agents, setAgents] = useState<ZapProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +28,7 @@ const AdminAgentsPage = () => {
     setLoading(true);
     setError(null);
     try {
+      // Fetch all agents, including inactive ones
       const fetchedAgents = await adminTenantService.listAgents();
       setAgents(fetchedAgents);
     } catch (err) {
@@ -44,12 +47,18 @@ const AdminAgentsPage = () => {
     // Refresh the list after a new agent is created
     fetchAgents();
   };
+  
+  const handleAgentUpdated = (updatedAgent: ZapProfile) => {
+      // Update the local list with the modified agent
+      setAgents(prev => prev.map(a => a.id === updatedAgent.id ? updatedAgent : a));
+      setEditingAgent(null);
+  };
 
   return (
     <div className="p-6 space-y-6">
       <header className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Gestão de Corretores</h1>
-        <Button onClick={() => setIsModalOpen(true)}>
+        <Button onClick={() => setIsCreationModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" /> Novo Corretor
         </Button>
       </header>
@@ -91,7 +100,7 @@ const AdminAgentsPage = () => {
                 {!loading && agents.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                      Nenhum corretor ativo encontrado.
+                      Nenhum corretor encontrado.
                     </TableCell>
                   </TableRow>
                 )}
@@ -109,9 +118,8 @@ const AdminAgentsPage = () => {
                     </TableCell>
                     <TableCell>{format(new Date(agent.created_at), 'dd/MM/yyyy')}</TableCell>
                     <TableCell className="text-right space-x-2">
-                      {/* Placeholder for future actions like Edit/Deactivate */}
-                      <Button variant="outline" size="sm" disabled>
-                        Editar
+                      <Button variant="outline" size="sm" onClick={() => setEditingAgent(agent)}>
+                        <Edit className="w-4 h-4 mr-1" /> Editar
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -124,10 +132,20 @@ const AdminAgentsPage = () => {
 
       {/* Agent Creation Modal */}
       <AgentCreationModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        isOpen={isCreationModalOpen} 
+        onClose={() => setIsCreationModalOpen(false)} 
         onAgentCreated={handleAgentCreated}
       />
+      
+      {/* Agent Edit Modal */}
+      {editingAgent && (
+        <AgentEditModal
+          isOpen={!!editingAgent}
+          onClose={() => setEditingAgent(null)}
+          agent={editingAgent}
+          onAgentUpdated={handleAgentUpdated}
+        />
+      )}
     </div>
   );
 };
