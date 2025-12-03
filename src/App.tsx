@@ -27,8 +27,22 @@ import SuperadminIntegrationsPage from "./pages/superadmin/SuperadminIntegration
 import SuperadminSettingsPage from "./pages/superadmin/SuperadminSettingsPage";
 import SuperadminTenantDetailPage from "./pages/superadmin/SuperadminTenantDetailPage";
 import SuperadminSupportPage from "./pages/superadmin/SuperadminSupportPage"; // Import new page
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { showSuccess, showError } from "@/utils/toast";
 
 const queryClient = new QueryClient();
+
+// Handler de Logout
+const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      showError("Falha ao sair: " + error.message);
+    } else {
+      showSuccess("Sessão encerrada.");
+    }
+};
 
 // Layout simples para o Agente (com navegação atualizada)
 const AgentLayout = () => {
@@ -40,11 +54,14 @@ const AgentLayout = () => {
       <header className="p-4 border-b shadow-sm">
         <nav className="flex justify-between items-center max-w-7xl mx-auto">
           <h1 className="text-xl font-bold text-primary">ZapCorretor - Agente ({agentName})</h1>
-          <div className="space-x-4">
+          <div className="space-x-4 flex items-center">
             <Link to="/agent/dashboard" className="text-sm font-medium hover:text-primary">Dashboard</Link>
             <Link to="/agent/leads" className="text-sm font-medium hover:text-primary">Meus Leads</Link>
             <Link to="/agent/settings" className="text-sm font-medium hover:text-primary">Configurações</Link>
             <Link to="/agent/profile" className="text-sm font-medium hover:text-primary">Perfil</Link>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-sm font-medium text-destructive hover:bg-destructive/10">
+                <LogOut className="w-4 h-4 mr-1" /> Sair
+            </Button>
           </div>
         </nav>
       </header>

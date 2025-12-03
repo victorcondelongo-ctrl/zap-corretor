@@ -80,6 +80,7 @@ async function callUazapi(
 
 // Função auxiliar para gerar o nome da instância
 async function generateInstanceName(userId: string, email: string) {
+    // Remove caracteres especiais, mantém minúsculas e números, e adiciona prefixo 'zapcro'
     const emailPart = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
     const timestamp = Date.now().toString();
     const lastFourDigits = timestamp.slice(-4);
