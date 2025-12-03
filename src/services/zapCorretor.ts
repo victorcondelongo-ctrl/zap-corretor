@@ -15,15 +15,18 @@ export interface ZapProfile {
   role: ZapRole;
   tenant_id: string | null;
   is_active: boolean;
-  // New fields added to profiles table
+  // Fields related to Uazapi instance stored in profiles
   instance_name: string | null;
   instance_created_at: string | null;
+  instance_id: string | null;
+  instance_token: string | null;
   // New field for individual export permission (to be added to DB later if needed, but defined here for future use)
   can_export_leads?: boolean; 
 }
 
 export interface ZapLead {
   id: string;
+// ... (rest of ZapLead remains the same)
   tenant_id: string;
   agent_id: string | null;
   phone: string;
@@ -42,6 +45,7 @@ export interface ZapLead {
 }
 
 export interface ZapMessage {
+// ... (rest of ZapMessage remains the same)
   id: string;
   lead_id: string;
   sender_type: SenderType;
@@ -51,11 +55,13 @@ export interface ZapMessage {
 }
 
 export interface ZapSalesByAgent {
+// ... (rest of ZapSalesByAgent remains the same)
   agent_id: string;
   sales_count: number;
 }
 
 export interface ZapDashboardStats {
+// ... (rest of ZapDashboardStats remains the same)
   total_leads: number;
   leads_new: number;
   leads_in_progress: number;
@@ -67,6 +73,7 @@ export interface ZapDashboardStats {
 }
 
 export interface ZapTenant {
+// ... (rest of ZapTenant remains the same)
   id: string;
   name: string;
   whatsapp_central_number: string | null;
@@ -79,6 +86,7 @@ export interface ZapTenant {
 }
 
 export interface ZapAgentSettings {
+// ... (rest of ZapAgentSettings remains the same)
   agent_id: string;
   ai_prompt: string | null;
   followup_30min_enabled: boolean;
@@ -86,6 +94,7 @@ export interface ZapAgentSettings {
 }
 
 export interface ZapTenantSettings {
+// ... (rest of ZapTenantSettings remains the same)
   tenant_id: string;
   distribution_mode: DistributionMode;
   default_ai_prompt: string | null;
@@ -93,6 +102,7 @@ export interface ZapTenantSettings {
 }
 
 export interface LeadUpdateData {
+// ... (rest of LeadUpdateData remains the same)
   name?: string | null;
   cpf?: string | null;
   cep?: string | null;
@@ -100,6 +110,7 @@ export interface LeadUpdateData {
 }
 
 export interface TenantUpdateData {
+// ... (rest of TenantUpdateData remains the same)
   name?: string;
   plan_status?: string;
   plan_expires_at?: string | null;
@@ -108,11 +119,13 @@ export interface TenantUpdateData {
 }
 
 export interface GlobalSettings {
+// ... (rest of GlobalSettings remains the same)
   n8n_webhook_url: string | null;
   whatsapp_notification_number: string | null;
 }
 
 export interface PlatformStats {
+// ... (rest of PlatformStats remains the same)
     total_tenants: number;
     total_agents: number;
     total_leads: number;
@@ -120,6 +133,7 @@ export interface PlatformStats {
 }
 
 export interface SupportTicketData {
+// ... (rest of SupportTicketData remains the same)
     name: string;
     email: string;
     phone: string | null;
@@ -129,6 +143,7 @@ export interface SupportTicketData {
 export type SupportTicketStatus = 'new' | 'in_progress' | 'closed';
 
 export interface ZapSupportTicket {
+// ... (rest of ZapSupportTicket remains the same)
     id: string;
     name: string;
     email: string;
@@ -194,12 +209,14 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
       throw new Error(`Profile not found for user ID: ${user.id}`);
     }
 
-    // Ensure tenant_id is correctly typed as string | null
+    // Ensure fields are correctly typed
     const typedProfile: ZapProfile = {
       ...profile,
       tenant_id: profile.tenant_id as string | null,
       instance_name: profile.instance_name as string | null,
       instance_created_at: profile.instance_created_at as string | null,
+      instance_id: profile.instance_id as string | null,
+      instance_token: profile.instance_token as string | null,
     };
 
     console.log("[getCurrentProfile] success, returning profile");
@@ -258,7 +275,7 @@ export const adminTenantService = {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, role, tenant_id, is_active, created_at, instance_name, instance_created_at")
+      .select("id, full_name, role, tenant_id, is_active, created_at, instance_name, instance_created_at, instance_id, instance_token")
       .eq("role", "AGENT"); // RLS will filter by tenant_id automatically
 
     if (error) {
@@ -280,7 +297,7 @@ export const adminTenantService = {
       .eq("id", agentId)
       .eq("tenant_id", profile.tenant_id) // RLS check is redundant but good practice
       .eq("role", "AGENT") // Ensure we only update agents
-      .select("id, full_name, role, tenant_id, is_active, created_at, instance_name, instance_created_at")
+      .select("id, full_name, role, tenant_id, is_active, created_at, instance_name, instance_created_at, instance_id, instance_token")
       .single();
 
     if (error) {
@@ -805,7 +822,7 @@ export const superadminService = {
     // Since the Edge Function only returns { message, userId }, we can't return ZapProfile directly.
     // We'll rely on the caller to refetch the list or handle the success message.
     // For now, we return a minimal object indicating success.
-    return { id: data.userId, full_name: params.fullName, role: 'AGENT', tenant_id: null, is_active: true, instance_name: null, instance_created_at: null };
+    return { id: data.userId, full_name: params.fullName, role: 'AGENT', tenant_id: null, is_active: true, instance_name: null, instance_created_at: null, instance_id: null, instance_token: null };
   },
 
   /**
