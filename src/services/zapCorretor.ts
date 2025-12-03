@@ -15,6 +15,9 @@ export interface ZapProfile {
   role: ZapRole;
   tenant_id: string | null;
   is_active: boolean;
+  // New fields added to profiles table
+  instance_name: string | null;
+  instance_created_at: string | null;
   // New field for individual export permission (to be added to DB later if needed, but defined here for future use)
   can_export_leads?: boolean; 
 }
@@ -195,6 +198,8 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
     const typedProfile: ZapProfile = {
       ...profile,
       tenant_id: profile.tenant_id as string | null,
+      instance_name: profile.instance_name as string | null,
+      instance_created_at: profile.instance_created_at as string | null,
     };
 
     console.log("[getCurrentProfile] success, returning profile");
@@ -253,7 +258,7 @@ export const adminTenantService = {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, role, tenant_id, is_active, created_at")
+      .select("id, full_name, role, tenant_id, is_active, created_at, instance_name, instance_created_at")
       .eq("role", "AGENT"); // RLS will filter by tenant_id automatically
 
     if (error) {
@@ -275,7 +280,7 @@ export const adminTenantService = {
       .eq("id", agentId)
       .eq("tenant_id", profile.tenant_id) // RLS check is redundant but good practice
       .eq("role", "AGENT") // Ensure we only update agents
-      .select("id, full_name, role, tenant_id, is_active, created_at")
+      .select("id, full_name, role, tenant_id, is_active, created_at, instance_name, instance_created_at")
       .single();
 
     if (error) {
@@ -800,7 +805,7 @@ export const superadminService = {
     // Since the Edge Function only returns { message, userId }, we can't return ZapProfile directly.
     // We'll rely on the caller to refetch the list or handle the success message.
     // For now, we return a minimal object indicating success.
-    return { id: data.userId, full_name: params.fullName, role: 'AGENT', tenant_id: null, is_active: true };
+    return { id: data.userId, full_name: params.fullName, role: 'AGENT', tenant_id: null, is_active: true, instance_name: null, instance_created_at: null };
   },
 
   /**
