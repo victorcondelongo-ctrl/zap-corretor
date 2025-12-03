@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ZapProfile, getCurrentProfile } from "@/services/zapCorretor";
@@ -22,15 +23,18 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ZapProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Ref para evitar múltiplos listeners
+  const subscriptionRef = useRef<ReturnType<typeof supabase.auth.onAuthStateChange> | null>(null);
 
-  const fetchProfile = useCallback(async () => {
-    if (!user) {
+  const fetchProfile = useCallback(async (currentUser: User | null) => {
+    if (!currentUser) {
       console.log("[SessionContext] fetchProfile(): sem user, limpando profile");
       setProfile(null);
       return;
     }
 
-    console.log("[SessionContext] fetchProfile() start para user", user.id);
+    console.log("[SessionContext] fetchProfile() start para user", currentUser.id);
     try {
       const p = await getCurrentProfile();
       console.log("[SessionContext] fetchProfile() success", p);
@@ -39,11 +43,11 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
       console.error("[SessionContext] fetchProfile() error", error);
       setProfile(null);
     }
-  }, [user]);
+  }, []);
 
   const refreshProfile = useCallback(async () => {
-    await fetchProfile();
-  }, [fetchProfile]);
+    await fetchProfile(user);
+  }, [user, fetchProfile]);
 
   useEffect(() => {
     let isMounted = true;
@@ -64,9 +68,9 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
         console.log("[SessionContext] loadInitial() user =", currentUser);
         setUser(currentUser);
 
-        // IMPORTANTE: não await aqui
+        // IMPORTANTE: não await aqui - roda em paralelo
         if (currentUser) {
-          void fetchProfile();
+          void fetchProfile(currentUser);
         } else {
           setProfile(null);
         }
@@ -80,6 +84,7 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
 
     loadInitial();
 
+    // Configura o listener uma única vez
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("[SessionContext] onAuthStateChange:", event, session);
@@ -89,18 +94,23 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
         setUser(currentUser);
 
         if (currentUser) {
-          void fetchProfile();
+          void fetchProfile(currentUser);
         } else {
           setProfile(null);
         }
       }
     );
 
+    // Armazena a subscription para cleanup
+    subscriptionRef.current = { data: { subscription } };
+
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
+      if (subscriptionRef.current?.data?.subscription) {
+        subscriptionRef.current.data.subscription.unsubscribe();
+      }
     };
-  }, [fetchProfile]);
+  }, []); // Dependência vazia: roda apenas uma vez no mount
 
   console.log("[SessionContext] render:", { user, profile, loading });
 
