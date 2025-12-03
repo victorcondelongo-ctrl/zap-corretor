@@ -30,7 +30,7 @@ const distributionModes: { value: DistributionMode, label: string }[] = [
 ];
 
 const formSchema = z.object({
-  distributionMode: z.enum(['sequential', 'random']),
+  distributionMode: z.enum(['sequential', 'random', 'weighted', 'schedule']), // FIX: Added weighted and schedule
   defaultAiPrompt: z.string().nullable(),
   agentsCanExport: z.boolean(),
 });

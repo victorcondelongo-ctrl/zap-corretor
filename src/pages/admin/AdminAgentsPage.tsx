@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Plus, Loader2, Edit } from "lucide-react";
+import { Users, Plus, Loader2, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AgentCreationModal from "@/components/admin/AgentCreationModal";
 import AgentEditModal from "@/components/admin/AgentEditModal";
 import { adminTenantService, ZapProfile } from "@/services/zapCorretor";
-import { showError } from "@/utils/toast";
+import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import {
   Table,
   TableBody,
@@ -16,10 +16,21 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const AdminAgentsPage = () => {
   const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<ZapProfile | null>(null);
+  const [agentToDelete, setAgentToDelete] = useState<ZapProfile | null>(null);
   const [agents, setAgents] = useState<ZapProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +63,26 @@ const AdminAgentsPage = () => {
       // Update the local list with the modified agent
       setAgents(prev => prev.map(a => a.id === updatedAgent.id ? updatedAgent : a));
       setEditingAgent(null);
+  };
+  
+  const handleDeleteAgent = async () => {
+      if (!agentToDelete) return;
+      
+      const agentName = agentToDelete.full_name;
+      const toastId = showLoading(`Excluindo corretor(a) ${agentName}...`);
+      
+      try {
+          await adminTenantService.deleteAgent(agentToDelete.id);
+          
+          showSuccess(`Corretor(a) ${agentName} excluído(a) com sucesso.`);
+          setAgentToDelete(null);
+          fetchAgents(); // Refresh list
+      } catch (err) {
+          console.error("Agent deletion error:", err);
+          showError(err instanceof Error ? err.message : "Falha ao excluir o corretor.");
+      } finally {
+          dismissToast(toastId);
+      }
   };
 
   return (
@@ -121,6 +152,9 @@ const AdminAgentsPage = () => {
                       <Button variant="outline" size="sm" onClick={() => setEditingAgent(agent)}>
                         <Edit className="w-4 h-4 mr-1" /> Editar
                       </Button>
+                      <Button variant="destructive" size="sm" onClick={() => setAgentToDelete(agent)}>
+                        <Trash2 className="w-4 h-4 mr-1" /> Excluir
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -146,6 +180,26 @@ const AdminAgentsPage = () => {
           onAgentUpdated={handleAgentUpdated}
         />
       )}
+      
+      {/* Agent Deletion Confirmation Dialog */}
+      <AlertDialog open={!!agentToDelete} onOpenChange={() => setAgentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente o corretor 
+              <span className="font-bold text-primary"> {agentToDelete?.full_name} </span> 
+              e removerá seu acesso ao sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteAgent} className="bg-destructive hover:bg-destructive/90">
+              Excluir Corretor
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
