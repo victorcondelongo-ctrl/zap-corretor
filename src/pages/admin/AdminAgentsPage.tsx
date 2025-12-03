@@ -26,14 +26,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useSession } from "@/contexts/SessionContext";
 
 const AdminAgentsPage = () => {
+  const { profile } = useSession();
   const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<ZapProfile | null>(null);
   const [agentToDelete, setAgentToDelete] = useState<ZapProfile | null>(null);
   const [agents, setAgents] = useState<ZapProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const tenantName = profile?.tenant_name || "Corretora";
 
   const fetchAgents = useCallback(async () => {
     setLoading(true);
@@ -107,7 +111,7 @@ const AdminAgentsPage = () => {
   return (
     <div className="p-6 space-y-6">
       <header className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Gestão de Corretores</h1>
+        <h1 className="text-3xl font-bold">Gestão de Corretores da {tenantName}</h1>
         <Button onClick={() => setIsCreationModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" /> Novo Corretor
         </Button>

@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Search, CheckCircle, XCircle, MessageSquare, UserPlus, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import LeadAssignmentModal from "@/components/admin/LeadAssignmentModal";
+import { useSession } from "@/contexts/SessionContext";
 
 // Mapa de tradução para os status
 const statusTranslations: Record<LeadStatus | 'all', string> = {
@@ -159,7 +160,7 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({ leadId, onClose }) 
 
 
 const LeadsPage = () => {
-  const [profile, setProfile] = useState<ZapProfile | null>(null);
+  const { profile } = useSession();
   const [agents, setAgents] = useState<ZapProfile[]>([]);
   const [leads, setLeads] = useState<ZapLead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,6 +173,8 @@ const LeadsPage = () => {
 
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [leadToAssign, setLeadToAssign] = useState<ZapLead | null>(null);
+  
+  const tenantName = profile?.tenant_name || "Corretora";
 
   // --- Initialization and Role Check ---
   useEffect(() => {
@@ -183,7 +186,6 @@ const LeadsPage = () => {
           setLoading(false);
           return;
         }
-        setProfile(p);
         // Fetch agents for filtering and assignment
         const fetchedAgents = await adminTenantService.listAgents();
         setAgents(fetchedAgents.filter(a => a.role === 'AGENT'));
@@ -289,7 +291,7 @@ const LeadsPage = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Gestão de Leads da Corretora</h1>
+      <h1 className="text-3xl font-bold">Gestão de Leads da {tenantName}</h1>
 
       {/* Filters */}
       <Card>

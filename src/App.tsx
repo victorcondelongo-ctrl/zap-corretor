@@ -10,7 +10,7 @@ import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminAgentsPage from "./pages/admin/AdminAgentsPage";
 import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
 import AdminBlockedPhonesPage from "./pages/admin/AdminBlockedPhonesPage";
-import AdminReportsPage from "./pages/admin/AdminReportsPage";
+import AdminWhatsappPage from "./pages/admin/AdminWhatsappPage"; // Import new page
 import Login from "./pages/Login";
 import { SessionContextProvider, useSession } from "./contexts/SessionContext";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
@@ -118,9 +118,10 @@ const App = () => (
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="leads" element={<LeadsPage />} />
               <Route path="agents" element={<AdminAgentsPage />} />
+              <Route path="whatsapp" element={<AdminWhatsappPage />} /> {/* New Route */}
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="blocked-phones" element={<AdminBlockedPhonesPage />} />
-              <Route path="reports" element={<AdminReportsPage />} />
+              {/* Removed: <Route path="reports" element={<AdminReportsPage />} /> */}
             </Route>
 
             {/* AGENT ROUTES - Wrapped in simple AgentLayout */}

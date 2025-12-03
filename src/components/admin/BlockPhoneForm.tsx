@@ -18,7 +18,10 @@ import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
 
-const phoneSchema = z.string().regex(/^55\d{10,11}$/, "O telefone deve estar no formato DDI+DDD+Número (ex: 5511999999999).");
+// Regex updated to accept 10 or 11 digits (DDD + Number)
+const phoneSchema = z.string()
+    .transform(val => val.replace(/\D/g, ''))
+    .refine(val => val.length === 10 || val.length === 11, "O telefone deve ter 10 ou 11 dígitos (DDD + Número).");
 
 const formSchema = z.object({
   phone: phoneSchema,
@@ -47,6 +50,9 @@ const BlockPhoneForm: React.FC<BlockPhoneFormProps> = ({ onPhoneBlocked }) => {
         showError("Erro de permissão: Tenant ID ausente.");
         return;
     }
+    
+    // Prepend 55 DDI before saving to DB, as the DB expects the full international format
+    const fullPhone = `55${values.phone}`;
 
     const toastId = showLoading("Bloqueando telefone...");
     
@@ -55,7 +61,7 @@ const BlockPhoneForm: React.FC<BlockPhoneFormProps> = ({ onPhoneBlocked }) => {
         .from('blocked_phones')
         .insert({
             tenant_id: profile.tenant_id,
-            phone: values.phone,
+            phone: fullPhone,
             imported_by_profile_id: profile.id,
         });
 
@@ -63,7 +69,7 @@ const BlockPhoneForm: React.FC<BlockPhoneFormProps> = ({ onPhoneBlocked }) => {
         throw new Error(error.message);
       }
 
-      showSuccess(`Telefone ${values.phone} bloqueado com sucesso!`);
+      showSuccess(`Telefone ${fullPhone} bloqueado com sucesso!`);
       form.reset();
       onPhoneBlocked();
     } catch (error) {
@@ -82,9 +88,15 @@ const BlockPhoneForm: React.FC<BlockPhoneFormProps> = ({ onPhoneBlocked }) => {
           name="phone"
           render={({ field }) => (
             <FormItem className="flex-grow">
-              <FormLabel>Telefone (55DDINúmero)</FormLabel>
+              <FormLabel>Telefone (DDINúmero)</FormLabel>
               <FormControl>
-                <Input placeholder="Ex: 5511999999999" {...field} />
+                <Input 
+                    placeholder="Ex: 11999999999 (DDD + Número)" 
+                    {...field} 
+                    // Ensure only digits are passed to the form state
+                    onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                    value={field.value.replace(/\D/g, '')}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

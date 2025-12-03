@@ -20,6 +20,7 @@ import {
   BarChart3,
   DollarSign,
 } from "lucide-react";
+import { useSession } from "@/contexts/SessionContext";
 
 // --- Helper Components ---
 
@@ -107,10 +108,12 @@ const SalesByAgentList: React.FC<SalesByAgentProps> = ({ salesData }) => {
 // --- Main Page Component ---
 
 const AdminDashboardPage = () => {
-  const [profile, setProfile] = useState<ZapProfile | null>(null);
+  const { profile } = useSession();
   const [stats, setStats] = useState<ZapDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const tenantName = profile?.tenant_name || "Corretora";
 
   const loadStats = useCallback(async (p: ZapProfile) => {
     if (p.role !== "ADMIN_TENANT") {
@@ -133,19 +136,13 @@ const AdminDashboardPage = () => {
   }, []);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const p = await getCurrentProfile();
-        setProfile(p);
-        loadStats(p);
-      } catch (err) {
-        console.error(err);
+    if (profile) {
+        loadStats(profile);
+    } else if (!profile && !loading) {
+        // If profile is null after loading, handle error
         setError("Erro de autenticação ou perfil não encontrado.");
-        setLoading(false);
-      }
-    };
-    checkAuth();
-  }, [loadStats]);
+    }
+  }, [profile, loadStats]);
 
   if (loading) {
     return (
@@ -169,7 +166,7 @@ const AdminDashboardPage = () => {
   if (!stats) {
     return (
       <div className="p-8 text-center">
-        <h1 className="text-2xl font-bold mb-2">Dashboard da Corretora</h1>
+        <h1 className="text-2xl font-bold mb-2">Dashboard da {tenantName}</h1>
         <p className="text-muted-foreground">Nenhum dado disponível para exibição.</p>
       </div>
     );
@@ -179,7 +176,7 @@ const AdminDashboardPage = () => {
 
   return (
     <div className="p-6 space-y-8">
-      <h1 className="text-3xl font-bold">Dashboard da Corretora</h1>
+      <h1 className="text-3xl font-bold">Dashboard da {tenantName}</h1>
 
       {/* Linha de Cards Principais */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4">

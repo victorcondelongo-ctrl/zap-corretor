@@ -28,6 +28,8 @@ const AdminBlockedPhonesPage = () => {
   const [blockedPhones, setBlockedPhones] = useState<BlockedPhone[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const tenantName = profile?.tenant_name || "Corretora";
 
   const fetchBlockedPhones = useCallback(async () => {
     if (!profile?.tenant_id) return;
@@ -109,8 +111,8 @@ const AdminBlockedPhonesPage = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Telefones Bloqueados</h1>
-      <p className="text-muted-foreground">Gerencie a lista de telefones que não devem ser contatados pela IA ou agentes (clientes existentes).</p>
+      <h1 className="text-3xl font-bold">Telefones Bloqueados da {tenantName}</h1>
+      <p className="text-muted-foreground">Gerencie a lista de telefones que a IA não deve responder (pausar a IA para quem já é cliente).</p>
 
       <Card>
         <CardHeader>

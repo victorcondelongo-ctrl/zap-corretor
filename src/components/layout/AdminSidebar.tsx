@@ -5,13 +5,14 @@ import {
   Users,
   Settings,
   ShieldOff,
-  BarChart,
   MessageSquare,
   LogOut,
+  Zap, // Added Zap icon for WhatsApp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
+import { useSession } from "@/contexts/SessionContext";
 
 interface NavItem {
   title: string;
@@ -23,13 +24,17 @@ const navItems: NavItem[] = [
   { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { title: "Leads", href: "/admin/leads", icon: MessageSquare },
   { title: "Gestão de Corretores", href: "/admin/agents", icon: Users },
+  { title: "WhatsApp Central", href: "/admin/whatsapp", icon: Zap }, // New item
   { title: "Configurações", href: "/admin/settings", icon: Settings },
-  { title: "Bloqueados", href: "/admin/blocked-phones", icon: ShieldOff },
-  { title: "Relatórios", href: "/admin/reports", icon: BarChart },
+  { title: "Telefones Bloqueados", href: "/admin/blocked-phones", icon: ShieldOff },
+  // Removed: { title: "Relatórios", href: "/admin/reports", icon: BarChart },
 ];
 
 const AdminSidebar: React.FC = () => {
   const location = useLocation();
+  const { profile } = useSession();
+  
+  const tenantName = profile?.tenant_name || "Corretora";
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -43,7 +48,9 @@ const AdminSidebar: React.FC = () => {
   return (
     <div className="flex flex-col h-full border-r bg-sidebar text-sidebar-foreground">
       <div className="p-4 border-b">
-        <h1 className="text-xl font-bold text-sidebar-primary">Admin Corretora</h1>
+        <h1 className="text-xl font-bold text-sidebar-primary truncate" title={tenantName}>
+            {tenantName}
+        </h1>
       </div>
       <nav className="flex-grow p-2 space-y-1">
         {navItems.map((item) => {

@@ -4,6 +4,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
+import { useSession } from "@/contexts/SessionContext";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -12,12 +13,15 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const { profile } = useSession();
+  
+  const tenantName = profile?.tenant_name || "Corretora";
 
   if (isMobile) {
     return (
       <div className="min-h-screen flex flex-col">
         <header className="flex items-center justify-between p-4 border-b bg-background">
-          <h1 className="text-lg font-bold text-primary">Admin Dashboard</h1>
+          <h1 className="text-lg font-bold text-primary">Admin: {tenantName}</h1>
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon">

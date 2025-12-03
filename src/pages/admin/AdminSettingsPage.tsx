@@ -3,12 +3,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Zap, MessageSquare, Save, Loader2, Users } from "lucide-react";
+import { Settings, Zap, MessageSquare, Save, Loader2, Users, Building } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -20,6 +21,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { adminTenantService, ZapTenantSettings, DistributionMode } from "@/services/zapCorretor";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
+import { useSession } from "@/contexts/SessionContext";
 
 const distributionModes: { value: DistributionMode, label: string }[] = [
     { value: 'sequential', label: 'Sequencial (Round-Robin)' },
@@ -30,7 +32,8 @@ const distributionModes: { value: DistributionMode, label: string }[] = [
 ];
 
 const formSchema = z.object({
-  distributionMode: z.enum(['sequential', 'random', 'weighted', 'schedule']), // FIX: Added weighted and schedule
+  tenantName: z.string().min(2, "O nome da corretora deve ter pelo menos 2 caracteres."), // New field
+  distributionMode: z.enum(['sequential', 'random', 'weighted', 'schedule']),
   defaultAiPrompt: z.string().nullable(),
   agentsCanExport: z.boolean(),
 });
@@ -38,11 +41,15 @@ const formSchema = z.object({
 type AdminSettingsFormValues = z.infer<typeof formSchema>;
 
 const AdminSettingsPage = () => {
+  const { profile, refreshProfile } = useSession();
   const [loading, setLoading] = React.useState(true);
+  
+  const tenantName = profile?.tenant_name || "Corretora";
 
   const form = useForm<AdminSettingsFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      tenantName: tenantName,
       distributionMode: 'sequential',
       defaultAiPrompt: "",
       agentsCanExport: false,
@@ -54,6 +61,7 @@ const AdminSettingsPage = () => {
     try {
       const settings = await adminTenantService.getSettings();
       form.reset({
+        tenantName: settings.name,
         distributionMode: settings.distribution_mode,
         defaultAiPrompt: settings.default_ai_prompt || "",
         agentsCanExport: settings.agents_can_export,
@@ -73,10 +81,14 @@ const AdminSettingsPage = () => {
     const toastId = showLoading("Salvando configurações da corretora...");
     try {
       await adminTenantService.saveSettings({
+        name: values.tenantName,
         distribution_mode: values.distributionMode,
         default_ai_prompt: values.defaultAiPrompt,
         agents_can_export: values.agentsCanExport,
       });
+      
+      // Refresh session context to update tenant name in layout
+      await refreshProfile();
       
       showSuccess("Configurações salvas com sucesso!");
     } catch (error) {
@@ -100,11 +112,37 @@ const AdminSettingsPage = () => {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold">Configurações da Corretora</h1>
+      <h1 className="text-3xl font-bold">Configurações da {tenantName}</h1>
       <p className="text-muted-foreground">Ajuste textos padrão, regras de distribuição de leads e permissões.</p>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          
+          {/* Nome da Corretora */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building className="w-5 h-5" /> Nome da Corretora
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="tenantName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nome da sua corretora" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+          
+          <Separator />
           
           {/* Distribuição de Leads */}
           <Card>
@@ -168,7 +206,7 @@ const AdminSettingsPage = () => {
                         placeholder="Ex: Você é um corretor de seguros amigável e profissional, focado em coletar Nome, CPF, CEP e Placa..."
                         rows={8}
                         {...field}
-                        value={field.value || ''}
+                        value={field.value || ''} // Ensure value is set, not placeholder
                         disabled={isSubmitting}
                       />
                     </FormControl>

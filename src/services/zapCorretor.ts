@@ -14,6 +14,7 @@ export interface ZapProfile {
   full_name: string;
   role: ZapRole;
   tenant_id: string | null;
+  tenant_name: string | null; // NEW FIELD
   is_active: boolean;
   created_at: string;
   // New field for agent alerts (stored in profiles, but fetched with settings)
@@ -143,6 +144,8 @@ export interface ZapTenantSettings {
   distribution_mode: DistributionMode;
   default_ai_prompt: string | null;
   agents_can_export: boolean;
+  // New field for tenant name
+  name: string;
 }
 
 export interface LeadUpdateData {
@@ -236,9 +239,10 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
       throw new Error("User not authenticated.");
     }
 
+    // Fetch profile, agent settings, and tenant name (if applicable)
     const { data: profile, error } = await supabase
       .from("profiles")
-      .select("*, agent_settings(can_export_leads, schedule_enabled, schedule_config)")
+      .select("*, agent_settings(can_export_leads, schedule_enabled, schedule_config), tenants(name)")
       .eq("id", user.id)
       .maybeSingle();     // Usando maybeSingle para evitar erro PGRST116
 
@@ -257,6 +261,7 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
     const typedProfile: ZapProfile = {
       ...profile,
       tenant_id: profile.tenant_id as string | null,
+      tenant_name: profile.tenants?.[0]?.name || null, // Extract tenant name from nested array/object
       instance_name: profile.instance_name as string | null,
       instance_created_at: profile.instance_created_at as string | null,
       instance_id: profile.instance_id as string | null,
@@ -264,7 +269,7 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
       whatsapp_alert_number: profile.whatsapp_alert_number as string | null,
       created_at: profile.created_at as string, // Ensure created_at is present
       
-      // Flatten settings for AGENTs (Errors 3, 4, 5, 7, 8 fixed by this)
+      // Flatten settings for AGENTs
       can_export_leads: profile.agent_settings?.[0]?.can_export_leads ?? false,
       schedule_enabled: profile.agent_settings?.[0]?.schedule_enabled ?? false,
       schedule_config: profile.agent_settings?.[0]?.schedule_config ?? null,
@@ -351,6 +356,7 @@ export const adminTenantService = {
         can_export_leads: p.agent_settings?.[0]?.can_export_leads ?? false,
         schedule_enabled: p.agent_settings?.[0]?.schedule_enabled ?? false,
         schedule_config: p.agent_settings?.[0]?.schedule_config ?? null,
+        tenant_name: null, // Not needed here
     })) as ZapProfile[];
   },
   
@@ -422,6 +428,7 @@ export const adminTenantService = {
         can_export_leads: updatedProfileData.agent_settings?.[0]?.can_export_leads ?? false,
         schedule_enabled: updatedProfileData.agent_settings?.[0]?.schedule_enabled ?? false,
         schedule_config: updatedProfileData.agent_settings?.[0]?.schedule_config ?? null,
+        tenant_name: profile.tenant_name, // Preserve tenant name from current session profile
     } as ZapProfile;
 
     return updatedProfile;
@@ -587,7 +594,7 @@ export const adminTenantService = {
 
     const { data, error } = await supabase
       .from("tenant_settings")
-      .select("tenant_id, distribution_mode, default_ai_prompt, agents_can_export")
+      .select("tenant_id, distribution_mode, default_ai_prompt, agents_can_export, tenants(name)") // Fetch tenant name
       .eq("tenant_id", profile.tenant_id)
       .maybeSingle();
 
@@ -602,10 +609,20 @@ export const adminTenantService = {
             distribution_mode: 'sequential',
             default_ai_prompt: null,
             agents_can_export: false,
+            name: profile.tenant_name || 'Corretora', // Use profile name if settings missing
         };
     }
+    
+    // Extract tenant name
+    const tenantName = data.tenants?.[0]?.name || profile.tenant_name || 'Corretora';
 
-    return data as ZapTenantSettings;
+    return {
+        tenant_id: data.tenant_id,
+        distribution_mode: data.distribution_mode,
+        default_ai_prompt: data.default_ai_prompt,
+        agents_can_export: data.agents_can_export,
+        name: tenantName,
+    } as ZapTenantSettings;
   },
 
   /**
@@ -615,22 +632,42 @@ export const adminTenantService = {
     const profile = await requireRole(["ADMIN_TENANT"]);
     
     const updateData = {
-        ...settings,
+        distribution_mode: settings.distribution_mode,
+        default_ai_prompt: settings.default_ai_prompt,
+        agents_can_export: settings.agents_can_export,
         tenant_id: profile.tenant_id!,
         updated_at: new Date().toISOString(),
     };
-
-    const { data, error } = await supabase
+    
+    // 1. Update tenant_settings
+    const { data: settingsData, error: settingsError } = await supabase
       .from("tenant_settings")
       .upsert(updateData, { onConflict: 'tenant_id' })
       .select("tenant_id, distribution_mode, default_ai_prompt, agents_can_export")
       .single();
 
-    if (error) {
-      throw new Error(`Failed to save tenant settings: ${error.message}`);
+    if (settingsError) {
+      throw new Error(`Failed to save tenant settings: ${settingsError.message}`);
+    }
+    
+    // 2. Update tenant name if provided
+    let tenantName = profile.tenant_name || 'Corretora';
+    if (settings.name) {
+        const { data: tenantData, error: tenantError } = await supabase
+            .from("tenants")
+            .update({ name: settings.name, updated_at: new Date().toISOString() })
+            .eq("id", profile.tenant_id!)
+            .select("name")
+            .single();
+            
+        if (tenantError) {
+            throw new Error(`Failed to update tenant name: ${tenantError.message}`);
+        }
+        tenantName = tenantData.name;
     }
 
-    return data as ZapTenantSettings;
+
+    return { ...settingsData, name: tenantName } as ZapTenantSettings;
   },
 
   /**
@@ -961,7 +998,7 @@ export const superadminService = {
 
     const { data, error } = await supabase
       .from("tenants")
-      .select("id, name, plan_status, plan_expires_at, base_monthly_leads_limit, timezone, created_at, updated_at, whatsapp_central_number");
+      .select("id, name, whatsapp_central_number, plan_status, plan_expires_at, base_monthly_leads_limit, timezone, created_at, updated_at");
 
     if (error) {
       throw new Error(`Failed to list tenants: ${error.message}`);
@@ -1018,7 +1055,7 @@ export const superadminService = {
     }
     
     // Since the Edge Function only returns { message, userId }, we return a minimal object indicating success.
-    return { id: data.userId, full_name: params.fullName, role: 'AGENT', tenant_id: null, is_active: true, instance_name: null, instance_created_at: null, instance_id: null, instance_token: null, whatsapp_alert_number: null, created_at: new Date().toISOString() };
+    return { id: data.userId, full_name: params.fullName, role: 'AGENT', tenant_id: null, tenant_name: null, is_active: true, instance_name: null, instance_created_at: null, instance_id: null, instance_token: null, whatsapp_alert_number: null, created_at: new Date().toISOString() };
   },
 
   /**
