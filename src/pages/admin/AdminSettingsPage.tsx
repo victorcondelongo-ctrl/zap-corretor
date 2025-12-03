@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { adminTenantService, ZapTenantSettings, DistributionMode } from "@/services/zapCorretor";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 import { useSession } from "@/contexts/SessionContext";
+import { PrimaryButton } from "@/components/ui/CustomButton"; // Import Custom Button
 
 const distributionModes: { value: DistributionMode, label: string }[] = [
     { value: 'sequential', label: 'Sequencial (Round-Robin)' },
@@ -119,7 +120,7 @@ const AdminSettingsPage = () => {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           
           {/* Nome da Corretora */}
-          <Card>
+          <Card className="rounded-xl shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building className="w-5 h-5" /> Nome da Corretora
@@ -145,7 +146,7 @@ const AdminSettingsPage = () => {
           <Separator />
           
           {/* Distribuição de Leads */}
-          <Card>
+          <Card className="rounded-xl shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Zap className="w-5 h-5" /> Distribuição de Leads
@@ -185,7 +186,7 @@ const AdminSettingsPage = () => {
           <Separator />
 
           {/* Textos Padrão (AI) */}
-          <Card>
+          <Card className="rounded-xl shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" /> Prompt Mestre Padrão da IA
@@ -220,7 +221,7 @@ const AdminSettingsPage = () => {
           <Separator />
 
           {/* Permissões */}
-          <Card>
+          <Card className="rounded-xl shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5" /> Permissões Globais
@@ -252,7 +253,7 @@ const AdminSettingsPage = () => {
             </CardContent>
           </Card>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <PrimaryButton type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -260,7 +261,7 @@ const AdminSettingsPage = () => {
                 <Save className="mr-2 h-4 w-4" /> Salvar Configurações da Corretora
               </>
             )}
-          </Button>
+          </PrimaryButton>
         </form>
       </Form>
     </div>

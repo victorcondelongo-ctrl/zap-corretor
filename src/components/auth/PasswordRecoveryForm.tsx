@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/form";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
+import { PrimaryButton } from "@/components/ui/CustomButton"; // Import Custom Button
 
 const formSchema = z.object({
   email: z.string().email("E-mail inválido."),
@@ -84,13 +85,13 @@ const PasswordRecoveryForm: React.FC<PasswordRecoveryFormProps> = ({ onLoginClic
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <PrimaryButton type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             "Enviar Link de Recuperação"
           )}
-        </Button>
+        </PrimaryButton>
         
         <div className="text-center mt-4">
             <Button variant="link" type="button" onClick={onLoginClick} className="text-sm">

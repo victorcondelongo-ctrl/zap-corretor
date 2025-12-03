@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 import { submitSupportTicket } from "@/services/zapCorretor";
+import { PrimaryButton } from "@/components/ui/CustomButton"; // Import Custom Button
 
 const phoneValidator = z.string().regex(/^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/, "Telefone inválido. Use o formato (XX) XXXXX-XXXX ou similar.")
     .transform(val => val.replace(/\D/g, ''))
@@ -83,7 +84,7 @@ const SupportForm: React.FC<SupportFormProps> = ({ onBackToHome }) => {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome Completo</FormLabel>
+              <FormLabel>Nome Completa</FormLabel>
               <FormControl>
                 <Input placeholder="Seu nome e sobrenome" {...field} />
               </FormControl>
@@ -142,7 +143,7 @@ const SupportForm: React.FC<SupportFormProps> = ({ onBackToHome }) => {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <PrimaryButton type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
@@ -150,7 +151,7 @@ const SupportForm: React.FC<SupportFormProps> = ({ onBackToHome }) => {
                 <Send className="mr-2 h-4 w-4" /> Enviar Ticket
             </>
           )}
-        </Button>
+        </PrimaryButton>
         
         <div className="text-center mt-4">
             <Button variant="link" type="button" onClick={onBackToHome} className="text-sm">

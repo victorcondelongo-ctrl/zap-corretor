@@ -24,8 +24,13 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        brand: { // New Brand Color Definition
+          DEFAULT: "hsl(var(--brand))",
+          foreground: "hsl(var(--brand-foreground))",
+          soft: "hsl(var(--brand-soft))",
+        },
         primary: {
-          DEFAULT: "hsl(var(--primary))",
+          DEFAULT: "hsl(var(--primary))", // Will map to brand
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
@@ -68,9 +73,9 @@ export default {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "1rem", // Increased radius for softer look
+        md: "calc(1rem - 4px)",
+        sm: "calc(1rem - 8px)",
       },
       keyframes: {
         "accordion-down": {

@@ -21,6 +21,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useSession } from "@/contexts/SessionContext";
+import { cn } from "@/lib/utils";
 
 // --- Helper Components ---
 
@@ -32,7 +33,7 @@ interface MetricCardProps {
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon, className = "" }) => (
-  <Card className={className}>
+  <Card className={cn("rounded-xl shadow-md transition-all duration-300 hover:shadow-lg", className)}>
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium">{title}</CardTitle>
       {icon}
@@ -92,7 +93,7 @@ const SalesByAgentList: React.FC<SalesByAgentProps> = ({ salesData }) => {
             <div className="w-2/3 flex items-center gap-2">
               <div className="flex-grow h-3 rounded-full bg-secondary">
                 <div
-                  className="h-full rounded-full bg-primary transition-all duration-500"
+                  className="h-full rounded-full bg-brand transition-all duration-500"
                   style={{ width: `${width}%` }}
                 />
               </div>
@@ -181,17 +182,17 @@ const AdminDashboardPage = () => {
       {/* Linha de Cards Principais */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4">
         <MetricCard title="Total de Leads" value={stats.total_leads} icon={<Users className="h-4 w-4 text-muted-foreground" />} />
-        <MetricCard title="Novos" value={stats.leads_new} icon={<Zap className="h-4 w-4 text-blue-500" />} />
+        <MetricCard title="Novos" value={stats.leads_new} icon={<Zap className="h-4 w-4 text-brand" />} />
         <MetricCard title="Em Atendimento" value={stats.leads_in_progress} icon={<Clock className="h-4 w-4 text-yellow-500" />} />
         <MetricCard title="Qualificados" value={stats.leads_qualified} icon={<Target className="h-4 w-4 text-green-500" />} />
         <MetricCard title="Abandonados" value={stats.leads_abandoned} icon={<XCircle className="h-4 w-4 text-destructive" />} />
         <MetricCard title="Vendidos (Leads)" value={stats.leads_sold} icon={<CheckCircle className="h-4 w-4 text-success" />} />
-        <MetricCard title="Total de Vendas" value={stats.total_sales} icon={<DollarSign className="h-4 w-4 text-primary" />} />
+        <MetricCard title="Total de Vendas" value={stats.total_sales} icon={<DollarSign className="h-4 w-4 text-brand" />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Funil de Leads */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 rounded-xl shadow-md">
           <CardHeader>
             <CardTitle>Funil de Leads</CardTitle>
           </CardHeader>
@@ -204,7 +205,7 @@ const AdminDashboardPage = () => {
                   label="Novos"
                   count={stats.leads_new}
                   total={totalLeads}
-                  color="bg-blue-500"
+                  color="bg-brand"
                 />
                 <FunnelItem
                   label="Em Atendimento"
@@ -237,7 +238,7 @@ const AdminDashboardPage = () => {
         </Card>
 
         {/* Vendas por Agente */}
-        <Card>
+        <Card className="rounded-xl shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" /> Vendas por Agente

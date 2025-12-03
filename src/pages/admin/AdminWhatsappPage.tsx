@@ -18,7 +18,7 @@ const AdminWhatsappPage = () => {
         <WhatsAppConnectionCard />
         
         {/* Central Number Info */}
-        <Card>
+        <Card className="rounded-xl shadow-md">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <MessageSquare className="w-5 h-5" /> Número Central
@@ -34,7 +34,7 @@ const AdminWhatsappPage = () => {
         </Card>
       </div>
       
-      <Card>
+      <Card className="rounded-xl shadow-md">
         <CardHeader>
             <CardTitle>Configurações de Mensagens</CardTitle>
         </CardHeader>

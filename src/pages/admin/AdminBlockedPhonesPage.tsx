@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import BlockPhoneForm from "@/components/admin/BlockPhoneForm";
+import { SecondaryButton, DestructiveButton } from "@/components/ui/CustomButton"; // Import Custom Buttons
 
 interface BlockedPhone {
     id: string;
@@ -114,7 +115,7 @@ const AdminBlockedPhonesPage = () => {
       <h1 className="text-3xl font-bold">Telefones Bloqueados da {tenantName}</h1>
       <p className="text-muted-foreground">Gerencie a lista de telefones que a IA não deve responder (pausar a IA para quem já é cliente).</p>
 
-      <Card>
+      <Card className="rounded-xl shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ShieldOff className="w-5 h-5" /> Bloquear Telefone Individualmente
@@ -125,7 +126,7 @@ const AdminBlockedPhonesPage = () => {
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="rounded-xl shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5" /> Importar Lista
@@ -133,13 +134,13 @@ const AdminBlockedPhonesPage = () => {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground mb-4">Importe uma lista de telefones (CSV) para bloqueio em massa.</p>
-          <Button variant="secondary" onClick={handleImportCSV}>
+          <SecondaryButton onClick={handleImportCSV}>
             <Upload className="w-4 h-4 mr-2" /> Fazer Upload CSV (Em Breve)
-          </Button>
+          </SecondaryButton>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-xl shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trash2 className="w-5 h-5" /> Lista Atual ({blockedPhones.length})
@@ -168,13 +169,12 @@ const AdminBlockedPhonesPage = () => {
                       <TableCell className="font-medium">{phone.phone}</TableCell>
                       <TableCell>{format(new Date(phone.imported_at), 'dd/MM/yyyy HH:mm')}</TableCell>
                       <TableCell className="text-right">
-                        <Button 
-                          variant="destructive" 
+                        <DestructiveButton 
                           size="sm" 
                           onClick={() => handleUnblockPhone(phone.id, phone.phone)}
                         >
                           Desbloquear
-                        </Button>
+                        </DestructiveButton>
                       </TableCell>
                     </TableRow>
                   ))

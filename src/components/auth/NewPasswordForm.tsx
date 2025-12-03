@@ -16,6 +16,7 @@ import {
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 import { supabase } from "@/integrations/supabase/client";
 import PasswordChecklist from "./PasswordChecklist";
+import { PrimaryButton } from "@/components/ui/CustomButton"; // Import Custom Button
 
 // Validation schema (same as signup)
 const passwordStrength = z.string().min(8, "Mínimo de 8 caracteres.")
@@ -182,13 +183,13 @@ const NewPasswordForm: React.FC<NewPasswordFormProps> = ({ onLoginClick }) => {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <PrimaryButton type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             "Atualizar Senha"
           )}
-        </Button>
+        </PrimaryButton>
       </form>
     </Form>
   );

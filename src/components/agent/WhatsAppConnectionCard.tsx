@@ -7,6 +7,8 @@ import { useUazapiInstanceStatus } from "@/hooks/use-uazapi-status";
 import { useUazapiInstanceActions } from "@/hooks/use-uazapi-actions";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { PrimaryButton, DestructiveButton } from "@/components/ui/CustomButton"; // Import Custom Buttons
+import { cn } from "@/lib/utils";
 
 const WhatsAppConnectionCard: React.FC = () => {
   const { statusData, isLoadingStatus, errorStatus, refetchStatus } = useUazapiInstanceStatus();
@@ -69,10 +71,10 @@ const WhatsAppConnectionCard: React.FC = () => {
   const statusVariant = statusInfo.variant as "default" | "secondary" | "destructive" | "outline" | "success" | "warning";
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className={cn("h-full flex flex-col rounded-xl shadow-md transition-all duration-300 hover:shadow-lg", statusData?.status === 'connected' ? 'border-success/50' : '')}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <Zap className="h-5 w-5 text-primary" /> Status do WhatsApp
+          <Zap className="h-5 w-5 text-brand" /> Status do WhatsApp
         </CardTitle>
         <Badge variant={statusVariant} className="capitalize">
           {statusText}
@@ -101,7 +103,7 @@ const WhatsAppConnectionCard: React.FC = () => {
 
             {/* QR Code / Pair Code Display */}
             {(qrCodeData || pairCodeData) && (
-              <div className="text-center p-4 border rounded-lg bg-secondary/50">
+              <div className="text-center p-4 border rounded-xl bg-brand-soft/50">
                 <h4 className="font-medium mb-2">
                     {qrCodeData ? "Escaneie o QR Code" : "Use o Pair Code"}
                 </h4>
@@ -113,7 +115,7 @@ const WhatsAppConnectionCard: React.FC = () => {
                   />
                 )}
                 {pairCodeData && (
-                    <p className="text-2xl font-bold text-primary tracking-widest">{pairCodeData}</p>
+                    <p className="text-2xl font-bold text-brand tracking-widest">{pairCodeData}</p>
                 )}
                 <p className="text-xs text-muted-foreground mt-2">
                     Mantenha esta tela aberta. O status será atualizado automaticamente.
@@ -124,24 +126,24 @@ const WhatsAppConnectionCard: React.FC = () => {
             {/* Actions */}
             <div className="flex flex-col gap-2">
               {statusData.status === 'no_instance' && (
-                <Button onClick={createInstance} disabled={isActionLoading}>
+                <PrimaryButton onClick={createInstance} disabled={isActionLoading}>
                   {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Criar Instância Uazapi"}
-                </Button>
+                </PrimaryButton>
               )}
               
               {(statusData.status === 'disconnected' || statusData.status === 'created' || statusData.status === 'waiting_qr' || statusData.status === 'waiting_pair') && statusData.hasInstance && (
-                <Button onClick={handleConnect} disabled={isActionLoading}>
+                <PrimaryButton onClick={handleConnect} disabled={isActionLoading}>
                   {isConnecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Conectar / Reconectar WhatsApp"}
-                </Button>
+                </PrimaryButton>
               )}
               
               {statusData.status === 'connected' && (
-                <Button onClick={handleDisconnect} variant="destructive" disabled={isActionLoading}>
+                <DestructiveButton onClick={handleDisconnect} disabled={isActionLoading}>
                   {isDisconnecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Desconectar WhatsApp"}
-                </Button>
+                </DestructiveButton>
               )}
               
-              <Button onClick={refetchStatus} variant="outline" size="sm" disabled={isActionLoading || isLoadingStatus}>
+              <Button onClick={refetchStatus} variant="outline" size="sm" disabled={isActionLoading || isLoadingStatus} className="rounded-xl">
                 <RefreshCw className="h-4 w-4 mr-2" /> Atualizar Status Manualmente
               </Button>
             </div>

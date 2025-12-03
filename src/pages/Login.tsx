@@ -12,6 +12,7 @@ import SignupForm from "@/components/auth/SignupForm";
 import PasswordRecoveryForm from "@/components/auth/PasswordRecoveryForm";
 import NewPasswordForm from "@/components/auth/NewPasswordForm";
 import SupportForm from "@/components/auth/SupportForm";
+import { PrimaryButton, SecondaryButton } from "@/components/ui/CustomButton"; // Import Custom Buttons
 
 type View = 'login' | 'signup' | 'recover' | 'support' | 'new-password';
 
@@ -97,13 +98,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onViewChange }) => {
                 </div>
             </div>
             
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <PrimaryButton type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                     "Entrar"
                 )}
-            </Button>
+            </PrimaryButton>
 
             <div className="flex justify-between text-sm mt-4">
                 <Button variant="link" type="button" onClick={() => onViewChange('recover')} className="p-0 h-auto text-primary hover:text-primary/80">
@@ -206,10 +207,10 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-brand-soft dark:bg-gray-900 p-4">
+      <Card className="w-full max-w-md rounded-2xl shadow-2xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">{getTitle()}</CardTitle>
+          <CardTitle className="text-3xl font-bold">{getTitle()}</CardTitle>
         </CardHeader>
         <CardContent>
           {renderForm()}

@@ -20,6 +20,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card"; // Added imports
+import { PrimaryButton } from "@/components/ui/CustomButton"; // Import Custom Button
 
 // --- Constants ---
 const PRICE_INDIVIDUAL = 297;
@@ -299,7 +300,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
                   defaultValue={field.value}
                   className="flex flex-col space-y-1"
                 >
-                  <FormItem className={cn("flex items-center space-x-3 space-y-0 p-3 border rounded-md", field.value === 'individual' && 'border-primary ring-1 ring-primary')}>
+                  <FormItem className={cn("flex items-center space-x-3 space-y-0 p-3 border rounded-xl transition-all duration-300", field.value === 'individual' && 'border-brand ring-1 ring-brand bg-brand-soft/50')}>
                     <FormControl>
                       <RadioGroupItem value="individual" />
                     </FormControl>
@@ -307,7 +308,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
                         <User className="w-4 h-4" /> Corretor Individual (R$ {PRICE_INDIVIDUAL}/mês)
                     </FormLabel>
                   </FormItem>
-                  <FormItem className={cn("flex items-center space-x-3 space-y-0 p-3 border rounded-md", field.value === 'corretora' && 'border-primary ring-1 ring-primary')}>
+                  <FormItem className={cn("flex items-center space-x-3 space-y-0 p-3 border rounded-xl transition-all duration-300", field.value === 'corretora' && 'border-brand ring-1 ring-brand bg-brand-soft/50')}>
                     <FormControl>
                       <RadioGroupItem value="corretora" />
                     </FormControl>
@@ -344,10 +345,10 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
             />
         )}
         
-        <Card className="bg-secondary/50">
+        <Card className="bg-brand-soft/50 rounded-xl shadow-md">
             <CardContent className="p-4">
                 <p className="text-sm font-semibold">Resumo da Assinatura (6 meses)</p>
-                <p className="text-2xl font-bold mt-1 text-primary">
+                <p className="text-2xl font-bold mt-1 text-brand">
                     R$ {monthlyPrice.toFixed(2).replace('.', ',')} / mês
                 </p>
                 <p className="text-sm text-muted-foreground">
@@ -356,13 +357,13 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
             </CardContent>
         </Card>
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <PrimaryButton type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             "Criar Conta e Pagar Assinatura"
           )}
-        </Button>
+        </PrimaryButton>
         
         <div className="text-center mt-4">
             <Button variant="link" type="button" onClick={onLoginClick} className="text-sm">
