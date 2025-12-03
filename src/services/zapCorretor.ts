@@ -66,11 +66,13 @@ export interface ZapDashboardStats {
 export interface ZapTenant {
   id: string;
   name: string;
+  whatsapp_central_number: string | null;
   plan_status: string;
   plan_expires_at: string | null;
   base_monthly_leads_limit: number;
   timezone: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface ZapAgentSettings {
@@ -92,6 +94,26 @@ export interface LeadUpdateData {
   cpf?: string | null;
   cep?: string | null;
   plate?: string | null;
+}
+
+export interface TenantUpdateData {
+  name?: string;
+  plan_status?: string;
+  plan_expires_at?: string | null;
+  base_monthly_leads_limit?: number;
+  timezone?: string;
+}
+
+export interface GlobalSettings {
+  n8n_webhook_url: string | null;
+  whatsapp_notification_number: string | null;
+}
+
+export interface PlatformStats {
+    total_tenants: number;
+    total_agents: number;
+    total_leads: number;
+    total_sales: number;
 }
 
 // =================================================================
@@ -172,13 +194,12 @@ export const adminTenantService = {
    * Lists all active agents within the ADMIN_TENANT's organization.
    */
   async listAgents(): Promise<ZapProfile[]> {
-    const profile = await requireRole(["ADMIN_TENANT"]);
+    await requireRole(["ADMIN_TENANT"]);
 
     const { data, error } = await supabase
       .from("profiles")
       .select("id, full_name, role, tenant_id, is_active, created_at")
-      .eq("tenant_id", profile.tenant_id)
-      .eq("role", "AGENT"); // List all agents, active or not
+      .eq("role", "AGENT"); // RLS will filter by tenant_id automatically
 
     if (error) {
       throw new Error(`Failed to list agents: ${error.message}`);
@@ -583,7 +604,7 @@ export const superadminService = {
 
     const { data, error } = await supabase
       .from("tenants")
-      .select("id, name, plan_status, plan_expires_at, base_monthly_leads_limit, timezone, created_at");
+      .select("id, name, plan_status, plan_expires_at, base_monthly_leads_limit, timezone, created_at, updated_at, whatsapp_central_number");
 
     if (error) {
       throw new Error(`Failed to list tenants: ${error.message}`);
@@ -645,5 +666,91 @@ export const superadminService = {
     };
 
     return stats;
+  },
+  
+  /**
+   * Updates specific details of a tenant (plan, limits, name).
+   */
+  async updateTenantDetails(tenantId: string, updateData: TenantUpdateData): Promise<ZapTenant> {
+    await requireRole(["SUPERADMIN"]);
+
+    const { data, error } = await supabase
+      .from("tenants")
+      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .eq("id", tenantId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update tenant details: ${error.message}`);
+    }
+
+    return data as ZapTenant;
+  },
+  
+  /**
+   * Fetches all global settings.
+   */
+  async getGlobalSettings(): Promise<GlobalSettings> {
+    await requireRole(["SUPERADMIN"]);
+
+    const { data, error } = await supabase
+      .from("global_settings")
+      .select("key, value");
+
+    if (error) {
+      throw new Error(`Failed to fetch global settings: ${error.message}`);
+    }
+    
+    // Map array of {key, value} to a single object
+    const settingsMap = data.reduce((acc, item) => {
+        acc[item.key] = item.value;
+        return acc;
+    }, {} as Record<string, string | null>);
+    
+    return {
+        n8n_webhook_url: settingsMap.n8n_webhook_url || null,
+        whatsapp_notification_number: settingsMap.whatsapp_notification_number || null,
+    };
+  },
+  
+  /**
+   * Saves or updates global settings.
+   */
+  async saveGlobalSettings(settings: Partial<GlobalSettings>): Promise<void> {
+    await requireRole(["SUPERADMIN"]);
+    
+    const updates = Object.entries(settings)
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => ({
+            key,
+            value: value,
+            updated_at: new Date().toISOString(),
+        }));
+
+    if (updates.length === 0) return;
+
+    const { error } = await supabase
+      .from("global_settings")
+      .upsert(updates, { onConflict: 'key' });
+
+    if (error) {
+      throw new Error(`Failed to save global settings: ${error.message}`);
+    }
+  },
+  
+  /**
+   * Retrieves platform-wide statistics (total tenants, agents, leads, sales).
+   */
+  async getPlatformStats(): Promise<PlatformStats> {
+    await requireRole(["SUPERADMIN"]);
+
+    const { data, error } = await supabase.rpc("get_platform_dashboard_stats").single();
+
+    if (error) {
+      throw new Error(`Failed to fetch platform stats: ${error.message}`);
+    }
+
+    return data as PlatformStats;
   },
 };

@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { superadminService, ZapTenant } from "@/services/zapCorretor";
+import { superadminService, ZapTenant, PlatformStats } from "@/services/zapCorretor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Loader2,
@@ -79,17 +79,25 @@ const TenantHighlight: React.FC<TenantHighlightProps> = ({ tenant }) => {
 
 
 const SuperadminDashboardPage = () => {
-  // Fetch all tenants
-  const { data: tenants, isLoading, error } = useQuery<ZapTenant[], Error>({
-    queryKey: ["superadminTenants"],
+  // Fetch platform-wide stats
+  const { data: platformStats, isLoading: isLoadingPlatform, error: errorPlatform } = useQuery<PlatformStats, Error>({
+    queryKey: ["platformStats"],
+    queryFn: superadminService.getPlatformStats,
+  });
+    
+  // Fetch all tenants (for list and expiration checks)
+  const { data: tenants, isLoading: isLoadingTenants, error: errorTenants } = useQuery<ZapTenant[], Error>({
+    queryKey: ["superadminTenantsList"],
     queryFn: superadminService.listTenants,
   });
 
   React.useEffect(() => {
-    if (error) {
-      showError(`Erro ao carregar dados globais: ${error.message}`);
+    if (errorPlatform || errorTenants) {
+      showError(`Erro ao carregar dados globais: ${errorPlatform?.message || errorTenants?.message}`);
     }
-  }, [error]);
+  }, [errorPlatform, errorTenants]);
+
+  const isLoading = isLoadingPlatform || isLoadingTenants;
 
   if (isLoading) {
     return (
@@ -100,13 +108,13 @@ const SuperadminDashboardPage = () => {
     );
   }
 
-  const totalTenants = tenants?.length || 0;
+  const totalTenants = platformStats?.total_tenants || 0;
   const activeTenants = tenants?.filter(t => t.plan_status === 'active').length || 0;
   const expiringSoon = tenants?.filter(t => t.plan_expires_at && new Date(t.plan_expires_at).getTime() < Date.now() + 7 * 24 * 60 * 60 * 1000).length || 0;
   
-  // Placeholders for global metrics (since we don't have a global RPC yet)
-  const totalLeadsGenerated = 0; 
-  const totalSales = 0;
+  const totalAgents = platformStats?.total_agents || 0;
+  const totalLeadsGenerated = platformStats?.total_leads || 0; 
+  const totalSales = platformStats?.total_sales || 0;
 
   return (
     <div className="p-6 space-y-8">
@@ -129,7 +137,7 @@ const SuperadminDashboardPage = () => {
         />
         <MetricCard 
             title="Total de Corretores" 
-            value="N/A" // Requires fetching all profiles, skipping for MVP simplicity
+            value={totalAgents.toLocaleString()}
             icon={<Users className="h-4 w-4 text-muted-foreground" />} 
         />
         <MetricCard 
@@ -150,7 +158,7 @@ const SuperadminDashboardPage = () => {
         />
         <MetricCard 
             title="Corretoras Inadimplentes" 
-            value="0" // Placeholder
+            value="0" // Placeholder for future billing integration
             icon={<AlertTriangle className="h-4 w-4 text-destructive" />} 
         />
       </div>
