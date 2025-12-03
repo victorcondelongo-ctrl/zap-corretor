@@ -1,5 +1,5 @@
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { superadminService, ZapTenant } from "@/services/zapCorretor";
 import { showError } from "@/utils/toast";
 import {
@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
+import TenantCreationModal from "@/components/superadmin/TenantCreationModal";
 
 // Helper component for status badge styling
 const PlanStatusBadge: React.FC<{ status: string }> = ({ status }) => {
@@ -44,6 +45,9 @@ const PlanStatusBadge: React.FC<{ status: string }> = ({ status }) => {
 
 
 const SuperadminTenantsPage = () => {
+  const queryClient = useQueryClient();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Fetch all tenants
   const { data: tenants, isLoading, error } = useQuery<ZapTenant[], Error>({
     queryKey: ["superadminTenantsList"],
@@ -56,25 +60,17 @@ const SuperadminTenantsPage = () => {
     }
   }, [error]);
 
-  if (isLoading) {
-    return (
-      <div className="p-8 flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-2">Carregando corretoras...</p>
-      </div>
-    );
-  }
-
-  // Placeholder for creation logic (future modal/form)
-  const handleCreateTenant = () => {
-    // This action will be implemented later
+  const handleTenantCreated = (newTenant: ZapTenant) => {
+    // Invalidate the query to refetch the list and update the dashboard
+    queryClient.invalidateQueries({ queryKey: ["superadminTenantsList"] });
+    queryClient.invalidateQueries({ queryKey: ["superadminTenants"] }); // Dashboard list
   };
 
   return (
     <div className="p-6 space-y-6">
       <header className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Corretoras</h1>
-        <Button onClick={handleCreateTenant}>
+        <Button onClick={() => setIsModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" /> Nova Corretora
         </Button>
       </header>
@@ -108,7 +104,14 @@ const SuperadminTenantsPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tenants && tenants.length > 0 ? (
+                {isLoading && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!isLoading && tenants && tenants.length > 0 ? (
                   tenants.map((tenant) => (
                     <TableRow key={tenant.id}>
                       <TableCell className="font-medium">{tenant.name}</TableCell>
@@ -130,17 +133,26 @@ const SuperadminTenantsPage = () => {
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                      Nenhuma corretora encontrada.
-                    </TableCell>
-                  </TableRow>
+                  !isLoading && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                        Nenhuma corretora encontrada.
+                      </TableCell>
+                    </TableRow>
+                  )
                 )}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
+
+      {/* Tenant Creation Modal */}
+      <TenantCreationModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onTenantCreated={handleTenantCreated}
+      />
     </div>
   );
 };

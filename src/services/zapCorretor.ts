@@ -382,6 +382,13 @@ export const agentService = {
 // 5. SUPERADMIN SERVICES
 // =================================================================
 
+export interface CreateTenantParams {
+  name: string;
+  whatsappCentralNumber: string;
+  timezone: string;
+  baseMonthlyLeadsLimit: number;
+}
+
 export const superadminService = {
   /**
    * Lists all tenants in the system.
@@ -398,6 +405,32 @@ export const superadminService = {
     }
 
     return data as ZapTenant[];
+  },
+
+  /**
+   * Creates a new tenant using the create_tenant RPC.
+   */
+  async createTenant(params: CreateTenantParams): Promise<ZapTenant> {
+    await requireRole(["SUPERADMIN"]);
+
+    // Default plan status and expiration for new tenants (e.g., 30 days trial)
+    const plan_status = 'trial';
+    const plan_expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data, error } = await supabase.rpc("create_tenant", {
+      p_name: params.name,
+      p_whatsapp_central_number: params.whatsappCentralNumber,
+      p_timezone: params.timezone,
+      p_plan_status: plan_status,
+      p_plan_expires_at: plan_expires_at,
+      p_base_monthly_leads_limit: params.baseMonthlyLeadsLimit,
+    }).single();
+
+    if (error) {
+      throw new Error(`Failed to create tenant: ${error.message}`);
+    }
+
+    return data as ZapTenant;
   },
 
   /**
