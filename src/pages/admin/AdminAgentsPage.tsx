@@ -232,8 +232,12 @@ const AdminAgentsPage = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteAgent} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteAgent} 
+              // Explicitly setting destructive background and white text for visibility
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
+            >
               Excluir Corretor
             </AlertDialogAction>
           </AlertDialogFooter>
