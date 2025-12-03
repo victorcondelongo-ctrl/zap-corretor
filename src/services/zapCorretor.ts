@@ -116,6 +116,13 @@ export interface PlatformStats {
     total_sales: number;
 }
 
+export interface SupportTicketData {
+    name: string;
+    email: string;
+    phone: string | null;
+    message: string;
+}
+
 // =================================================================
 // 2. GENERIC CONTEXT FUNCTIONS
 // =================================================================
@@ -184,6 +191,25 @@ async function requireRole(roles: ZapRole[]): Promise<ZapProfile> {
 
   return profile;
 }
+
+/**
+ * Submits a support ticket to the database.
+ */
+export async function submitSupportTicket(data: SupportTicketData): Promise<void> {
+    const { error } = await supabase
+        .from('support_tickets')
+        .insert({
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            message: data.message,
+        });
+
+    if (error) {
+        throw new Error(`Failed to submit support ticket: ${error.message}`);
+    }
+}
+
 
 // =================================================================
 // 3. ADMIN_TENANT SERVICES
