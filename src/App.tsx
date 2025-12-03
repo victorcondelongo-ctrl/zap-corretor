@@ -15,6 +15,8 @@ import Login from "./pages/Login";
 import { SessionContextProvider } from "./contexts/SessionContext";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
 import MyLeadsPage from "./pages/agent/MyLeadsPage";
+import AgentSettingsPage from "./pages/agent/AgentSettingsPage";
+import AgentProfilePage from "./pages/agent/AgentProfilePage";
 import SuperadminLayout from "./components/layout/SuperadminLayout";
 import AdminLayout from "./components/layout/AdminLayout";
 import SuperadminDashboardPage from "./pages/superadmin/SuperadminDashboardPage";
@@ -25,6 +27,26 @@ import SuperadminSettingsPage from "./pages/superadmin/SuperadminSettingsPage";
 import SuperadminTenantDetailPage from "./pages/superadmin/SuperadminTenantDetailPage";
 
 const queryClient = new QueryClient();
+
+// Layout simples para o Agente (sem sidebar complexa)
+const AgentLayout = () => (
+  <div className="min-h-screen bg-background">
+    <header className="p-4 border-b shadow-sm">
+      <nav className="flex justify-between items-center max-w-7xl mx-auto">
+        <h1 className="text-xl font-bold text-primary">Meus Leads</h1>
+        <div className="space-x-4">
+          <Link to="/agent/leads" className="text-sm font-medium hover:text-primary">Leads</Link>
+          <Link to="/agent/settings" className="text-sm font-medium hover:text-primary">Configurações</Link>
+          <Link to="/agent/profile" className="text-sm font-medium hover:text-primary">Perfil</Link>
+        </div>
+      </nav>
+    </header>
+    <main className="max-w-7xl mx-auto pb-10">
+      <Outlet />
+    </main>
+  </div>
+);
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -75,15 +97,20 @@ const App = () => (
               <Route path="reports" element={<AdminReportsPage />} />
             </Route>
 
-            {/* AGENT ROUTES */}
+            {/* AGENT ROUTES - Wrapped in simple AgentLayout */}
             <Route
-              path="/agent/leads"
+              path="/agent"
               element={
                 <ProtectedRoute allowedRoles={["AGENT"]}>
-                  <MyLeadsPage />
+                  <AgentLayout />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route path="leads" element={<MyLeadsPage />} />
+              <Route path="settings" element={<AgentSettingsPage />} />
+              <Route path="profile" element={<AgentProfilePage />} />
+            </Route>
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
