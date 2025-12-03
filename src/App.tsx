@@ -7,11 +7,16 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LeadsPage from "./pages/admin/LeadsPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminAgentsPage from "./pages/admin/AdminAgentsPage";
+import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
+import AdminBlockedPhonesPage from "./pages/admin/AdminBlockedPhonesPage";
+import AdminReportsPage from "./pages/admin/AdminReportsPage";
 import Login from "./pages/Login";
 import { SessionContextProvider } from "./contexts/SessionContext";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
 import MyLeadsPage from "./pages/agent/MyLeadsPage";
 import SuperadminLayout from "./components/layout/SuperadminLayout";
+import AdminLayout from "./components/layout/AdminLayout";
 import SuperadminDashboardPage from "./pages/superadmin/SuperadminDashboardPage";
 import SuperadminTenantsPage from "./pages/superadmin/SuperadminTenantsPage";
 import SuperadminPlansPage from "./pages/superadmin/SuperadminPlansPage";
@@ -51,23 +56,25 @@ const App = () => (
               <Route path="settings" element={<SuperadminSettingsPage />} />
             </Route>
 
-            {/* ADMIN ROUTES */}
+            {/* ADMIN TENANT ROUTES - Wrapped in Layout */}
             <Route
-              path="/admin/dashboard"
+              path="/admin"
               element={
                 <ProtectedRoute allowedRoles={["ADMIN_TENANT"]}>
-                  <AdminDashboardPage />
+                  <AdminLayout>
+                    <Outlet />
+                  </AdminLayout>
                 </ProtectedRoute>
               }
-            />
-            <Route
-              path="/admin/leads"
-              element={
-                <ProtectedRoute allowedRoles={["ADMIN_TENANT"]}>
-                  <LeadsPage />
-                </ProtectedRoute>
-              }
-            />
+            >
+              <Route path="dashboard" element={<AdminDashboardPage />} />
+              <Route path="leads" element={<LeadsPage />} />
+              <Route path="agents" element={<AdminAgentsPage />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
+              <Route path="blocked-phones" element={<AdminBlockedPhonesPage />} />
+              <Route path="reports" element={<AdminReportsPage />} />
+            </Route>
+
             {/* AGENT ROUTES */}
             <Route
               path="/agent/leads"
