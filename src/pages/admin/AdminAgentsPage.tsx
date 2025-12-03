@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useSession } from "@/contexts/SessionContext";
-import { PrimaryButton, DestructiveButton } from "@/components/ui/CustomButton";
+import { PrimaryButton, DestructiveButton, SecondaryButton } from "@/components/ui/CustomButton";
 
 const AdminAgentsPage = () => {
   const { profile } = useSession();
@@ -180,7 +180,7 @@ const AdminAgentsPage = () => {
                     <TableCell>{format(new Date(agent.created_at), 'dd/MM/yyyy')}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button 
-                        variant={agent.is_active ? "destructive" : "success"} 
+                        variant={agent.is_active ? "secondary" : "success"} 
                         size="sm" 
                         onClick={() => handleToggleActiveStatus(agent)}
                         disabled={loading}
@@ -188,9 +188,9 @@ const AdminAgentsPage = () => {
                       >
                         <Clock className="w-4 h-4 mr-1" /> {agent.is_active ? 'Pausar' : 'Ativar'}
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => setEditingAgent(agent)} className="rounded-xl transition-all duration-200">
+                      <SecondaryButton size="sm" onClick={() => setEditingAgent(agent)}>
                         <Edit className="w-4 h-4 mr-1" /> Editar
-                      </Button>
+                      </SecondaryButton>
                       <DestructiveButton size="sm" onClick={() => setAgentToDelete(agent)}>
                         <Trash2 className="w-4 h-4 mr-1" /> Excluir
                       </DestructiveButton>

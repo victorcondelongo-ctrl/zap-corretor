@@ -107,16 +107,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onViewChange }) => {
             </PrimaryButton>
 
             <div className="flex justify-between text-sm mt-4">
-                <Button variant="link" type="button" onClick={() => onViewChange('recover')} className="p-0 h-auto text-primary hover:text-primary/80">
+                <Button variant="link" type="button" onClick={() => onViewChange('recover')} className="p-0 h-auto text-brand hover:text-brand/80">
                     Esqueceu sua senha?
                 </Button>
-                <Button variant="link" type="button" onClick={() => onViewChange('support')} className="p-0 h-auto text-muted-foreground hover:text-primary">
+                <Button variant="link" type="button" onClick={() => onViewChange('support')} className="p-0 h-auto text-muted-foreground hover:text-brand">
                     Precisa de ajuda? Suporte
                 </Button>
             </div>
             
             <div className="text-center pt-4 border-t">
-                <Button variant="link" type="button" onClick={() => onViewChange('signup')} className="text-sm">
+                <Button variant="link" type="button" onClick={() => onViewChange('signup')} className="text-sm text-brand hover:text-brand/80">
                     Não tem uma conta? Cadastre-se
                 </Button>
             </div>
@@ -210,7 +210,7 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-brand-soft dark:bg-gray-900 p-4">
       <Card className="w-full max-w-md rounded-2xl shadow-2xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">{getTitle()}</CardTitle>
+          <CardTitle className="text-3xl font-bold text-brand">{getTitle()}</CardTitle>
         </CardHeader>
         <CardContent>
           {renderForm()}

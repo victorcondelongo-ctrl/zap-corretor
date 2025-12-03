@@ -80,7 +80,7 @@ const PasswordRecoveryForm: React.FC<PasswordRecoveryFormProps> = ({ onLoginClic
               <FormControl>
                 <Input type="email" placeholder="seu@email.com" {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-destructive" />
             </FormItem>
           )}
         />
@@ -94,7 +94,7 @@ const PasswordRecoveryForm: React.FC<PasswordRecoveryFormProps> = ({ onLoginClic
         </PrimaryButton>
         
         <div className="text-center mt-4">
-            <Button variant="link" type="button" onClick={onLoginClick} className="text-sm">
+            <Button variant="link" type="button" onClick={onLoginClick} className="p-0 h-auto text-brand hover:text-brand/80 text-sm">
                 Lembrou a senha? Faça login
             </Button>
         </div>

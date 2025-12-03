@@ -175,7 +175,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
               <FormControl>
                 <Input placeholder="Nome Sobrenome" {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-destructive" />
             </FormItem>
           )}
         />
@@ -189,7 +189,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
               <FormControl>
                 <Input type="email" placeholder="seu@email.com" {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-destructive" />
             </FormItem>
           )}
         />
@@ -212,7 +212,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
                     }}
                 />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-destructive" />
             </FormItem>
           )}
         />
@@ -248,7 +248,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
                 </div>
               </FormControl>
               <PasswordChecklist password={passwordValue} />
-              <FormMessage />
+              <FormMessage className="text-destructive" />
             </FormItem>
           )}
         />
@@ -281,7 +281,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
                   </Button>
                 </div>
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-destructive" />
             </FormItem>
           )}
         />
@@ -318,7 +318,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
                   </FormItem>
                 </RadioGroup>
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-destructive" />
             </FormItem>
           )}
         />
@@ -339,7 +339,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
                         min={MIN_AGENTS_CORRETORA}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-destructive" />
                 </FormItem>
               )}
             />

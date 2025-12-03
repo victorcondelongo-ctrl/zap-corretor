@@ -145,7 +145,7 @@ const NewPasswordForm: React.FC<NewPasswordFormProps> = ({ onLoginClick }) => {
                 </div>
               </FormControl>
               <PasswordChecklist password={passwordValue} />
-              <FormMessage />
+              <FormMessage className="text-destructive" />
             </FormItem>
           )}
         />
@@ -178,7 +178,7 @@ const NewPasswordForm: React.FC<NewPasswordFormProps> = ({ onLoginClick }) => {
                   </Button>
                 </div>
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-destructive" />
             </FormItem>
           )}
         />

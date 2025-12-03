@@ -88,7 +88,7 @@ const SupportForm: React.FC<SupportFormProps> = ({ onBackToHome }) => {
               <FormControl>
                 <Input placeholder="Seu nome e sobrenome" {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-destructive" />
             </FormItem>
           )}
         />
@@ -102,7 +102,7 @@ const SupportForm: React.FC<SupportFormProps> = ({ onBackToHome }) => {
               <FormControl>
                 <Input type="email" placeholder="seu@email.com" {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-destructive" />
             </FormItem>
           )}
         />
@@ -116,7 +116,7 @@ const SupportForm: React.FC<SupportFormProps> = ({ onBackToHome }) => {
               <FormControl>
                 <Input placeholder="(XX) XXXXX-XXXX" {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-destructive" />
             </FormItem>
           )}
         />
@@ -138,7 +138,7 @@ const SupportForm: React.FC<SupportFormProps> = ({ onBackToHome }) => {
                 <span></span>
                 <span>{messageLength} / 1500</span>
               </div>
-              <FormMessage />
+              <FormMessage className="text-destructive" />
             </FormItem>
           )}
         />
@@ -154,7 +154,7 @@ const SupportForm: React.FC<SupportFormProps> = ({ onBackToHome }) => {
         </PrimaryButton>
         
         <div className="text-center mt-4">
-            <Button variant="link" type="button" onClick={onBackToHome} className="text-sm">
+            <Button variant="link" type="button" onClick={onBackToHome} className="text-sm text-brand hover:text-brand/80">
                 Voltar para a página inicial
             </Button>
         </div>
