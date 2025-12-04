@@ -11,6 +11,7 @@ export type DistributionMode = "sequential" | "random" | "weighted" | "schedule"
 
 export interface ZapProfile {
   id: string;
+// ... (rest of ZapProfile remains the same)
   full_name: string;
   role: ZapRole;
   tenant_id: string | null;
@@ -666,8 +667,11 @@ export const adminTenantService = {
         tenantName = tenantData.name;
     }
 
-
-    return { ...settingsData, name: tenantName } as ZapTenantSettings;
+    // 3. Return the combined settings object, including the potentially new tenant name
+    return { 
+        ...settingsData, 
+        name: tenantName 
+    } as ZapTenantSettings;
   },
 
   /**
