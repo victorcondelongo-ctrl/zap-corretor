@@ -161,7 +161,7 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({ leadId, onClose }) 
 
 
 const LeadsPage = () => {
-  const { profile } = useSession();
+  const { profile, loading: sessionLoading } = useSession();
   const [agents, setAgents] = useState<ZapProfile[]>([]);
   const [leads, setLeads] = useState<ZapLead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,6 +175,7 @@ const LeadsPage = () => {
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [leadToAssign, setLeadToAssign] = useState<ZapLead | null>(null);
   
+  // Derivar o nome da corretora diretamente do profile para reatividade
   const tenantName = profile?.tenant_name || "Corretora";
 
   // --- Initialization and Role Check ---
@@ -197,8 +198,11 @@ const LeadsPage = () => {
         setLoading(false);
       }
     };
-    checkAuth();
-  }, []);
+    // Only run initial check if session is not loading
+    if (!sessionLoading) {
+        checkAuth();
+    }
+  }, [sessionLoading]);
 
   // --- Data Fetching ---
   const fetchLeads = useCallback(async () => {

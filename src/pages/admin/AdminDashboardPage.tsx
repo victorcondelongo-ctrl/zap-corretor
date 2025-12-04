@@ -109,11 +109,12 @@ const SalesByAgentList: React.FC<SalesByAgentProps> = ({ salesData }) => {
 // --- Main Page Component ---
 
 const AdminDashboardPage = () => {
-  const { profile } = useSession();
+  const { profile, loading: sessionLoading } = useSession();
   const [stats, setStats] = useState<ZapDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Derivar o nome da corretora diretamente do profile para reatividade
   const tenantName = profile?.tenant_name || "Corretora";
 
   const loadStats = useCallback(async (p: ZapProfile) => {
@@ -139,11 +140,11 @@ const AdminDashboardPage = () => {
   useEffect(() => {
     if (profile) {
         loadStats(profile);
-    } else if (!profile && !loading) {
+    } else if (!profile && !sessionLoading) {
         // If profile is null after loading, handle error
         setError("Erro de autenticação ou perfil não encontrado.");
     }
-  }, [profile, loadStats]);
+  }, [profile, loadStats, sessionLoading]);
 
   if (loading) {
     return (
@@ -167,7 +168,7 @@ const AdminDashboardPage = () => {
   if (!stats) {
     return (
       <div className="p-8 text-center">
-        <h1 className="text-2xl font-bold mb-2 text-brand">Dashboard da {tenantName}</h1>
+        <h1 className="text-3xl font-bold mb-2 text-brand">Dashboard da {tenantName}</h1>
         <p className="text-muted-foreground">Nenhum dado disponível para exibição.</p>
       </div>
     );

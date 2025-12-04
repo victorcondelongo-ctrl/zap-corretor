@@ -30,7 +30,7 @@ import { useSession } from "@/contexts/SessionContext";
 import { PrimaryButton, DestructiveButton, SecondaryButton } from "@/components/ui/CustomButton";
 
 const AdminAgentsPage = () => {
-  const { profile } = useSession();
+  const { profile, loading: sessionLoading } = useSession();
   const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<ZapProfile | null>(null);
   const [agentToDelete, setAgentToDelete] = useState<ZapProfile | null>(null);
@@ -38,6 +38,7 @@ const AdminAgentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Derivar o nome da corretora diretamente do profile para reatividade
   const tenantName = profile?.tenant_name || "Corretora";
 
   const fetchAgents = useCallback(async () => {
@@ -56,8 +57,15 @@ const AdminAgentsPage = () => {
   }, []);
 
   useEffect(() => {
-    fetchAgents();
-  }, [fetchAgents]);
+    // Fetch agents only after profile is loaded
+    if (profile) {
+        fetchAgents();
+    } else if (!sessionLoading) {
+        // If profile is null after loading, handle error
+        setError("Erro de autenticação ou perfil não encontrado.");
+        setLoading(false);
+    }
+  }, [profile, fetchAgents, sessionLoading]);
 
   const handleAgentCreated = () => {
     // Refresh the list after a new agent is created

@@ -25,11 +25,12 @@ interface BlockedPhone {
 }
 
 const AdminBlockedPhonesPage = () => {
-  const { profile } = useSession();
+  const { profile, loading: sessionLoading } = useSession();
   const [blockedPhones, setBlockedPhones] = useState<BlockedPhone[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Derivar o nome da corretora diretamente do profile para reatividade
   const tenantName = profile?.tenant_name || "Corretora";
 
   const fetchBlockedPhones = useCallback(async () => {
@@ -59,8 +60,12 @@ const AdminBlockedPhonesPage = () => {
   useEffect(() => {
     if (profile?.tenant_id) {
         fetchBlockedPhones();
+    } else if (!sessionLoading) {
+        // If profile is null after loading, handle error
+        setError("Erro de autenticação ou perfil não encontrado.");
+        setLoading(false);
     }
-  }, [profile?.tenant_id, fetchBlockedPhones]);
+  }, [profile?.tenant_id, fetchBlockedPhones, sessionLoading]);
   
   const handlePhoneBlocked = () => {
       fetchBlockedPhones();
