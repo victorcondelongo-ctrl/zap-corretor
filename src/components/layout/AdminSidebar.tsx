@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/contexts/SessionContext";
+import WhatsAppStatusBadge from "@/components/shared/WhatsAppStatusBadge"; // Import the new component
 
 interface NavItem {
   title: string;
@@ -75,6 +76,10 @@ const AdminSidebar: React.FC = () => {
         })}
       </nav>
       <div className="p-2 border-t">
+        {/* WhatsApp Status Badge for Admin */}
+        <div className="mb-2">
+            <WhatsAppStatusBadge className="w-full justify-center" />
+        </div>
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 rounded-xl p-3 text-sm font-medium w-full text-left text-destructive hover:bg-destructive/10 transition-colors duration-200"

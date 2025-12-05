@@ -262,7 +262,7 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
     const typedProfile: ZapProfile = {
       ...profile,
       tenant_id: profile.tenant_id as string | null,
-      tenant_name: (profile.tenants as { name: string })?.name || null,
+      tenant_name: (profile.tenants as Array<{ name: string }>)?.[0]?.name || null, // CORRECTED: Access as array
       instance_name: profile.instance_name as string | null,
       instance_created_at: profile.instance_created_at as string | null,
       instance_id: profile.instance_id as string | null,
@@ -615,7 +615,7 @@ export const adminTenantService = {
     }
     
     // Extract tenant name
-    const tenantName = (data.tenants as { name: string })?.name || profile.tenant_name || 'Corretora';
+    const tenantName = (data.tenants as Array<{ name: string }>)?.[0]?.name || profile.tenant_name || 'Corretora'; // CORRECTED
 
     return {
         tenant_id: data.tenant_id,
@@ -804,7 +804,7 @@ export const agentService = {
         // Ensure nested data is correctly accessed and typed
         schedule_config: data.schedule_config as AgentScheduleConfig | null,
         // The nested select returns an array, we extract the number
-        whatsapp_alert_number: (data.profiles as { whatsapp_alert_number: string })?.whatsapp_alert_number || profile.whatsapp_alert_number,
+        whatsapp_alert_number: (data.profiles as { whatsapp_alert_number: string } | null)?.whatsapp_alert_number || profile.whatsapp_alert_number,
     };
 
     return settings;
