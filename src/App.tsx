@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
+import WhatsappStatusCompact from "@/components/common/WhatsappStatusCompact"; // Import new component
 
 const queryClient = new QueryClient();
 
@@ -66,7 +67,14 @@ const AgentLayout = () => {
         </nav>
       </header>
       <main className="max-w-7xl mx-auto pb-10">
-        <Outlet />
+        <div className="p-4">
+            {profile?.tenant_id === null && ( // Only show for independent agents
+                <div className="mb-4">
+                    <WhatsappStatusCompact isAgent={true} />
+                </div>
+            )}
+            <Outlet />
+        </div>
       </main>
     </div>
   );

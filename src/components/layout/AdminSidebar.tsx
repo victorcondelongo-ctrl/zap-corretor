@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 import { useSession } from "@/contexts/SessionContext";
+import WhatsappStatusCompact from "@/components/common/WhatsappStatusCompact"; // Import new component
 
 interface NavItem {
   title: string;
@@ -74,7 +75,8 @@ const AdminSidebar: React.FC = () => {
           );
         })}
       </nav>
-      <div className="p-2 border-t">
+      <div className="p-2 border-t space-y-2">
+        <WhatsappStatusCompact isAgent={false} /> {/* Admin (Corretora) WhatsApp Status */}
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 rounded-xl p-3 text-sm font-medium w-full text-left text-destructive hover:bg-destructive/10 transition-colors duration-200"
