@@ -100,7 +100,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
       password: "",
       confirmPassword: "",
       planType: "individual",
-      agentCount: 1,
+      agentCount: MIN_AGENTS_CORRETORA, // Corrected default value
     },
     mode: "onChange",
   });
