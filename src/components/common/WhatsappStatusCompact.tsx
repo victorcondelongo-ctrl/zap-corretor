@@ -1,18 +1,63 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { useUazapiInstanceStatus } from "@/hooks/use-uazapi-status";
-import { Loader2, Zap, CheckCircle, XCircle, QrCode, Clock } from "lucide-react";
+import { useUazapiInstanceActions } from "@/hooks/use-uazapi-actions";
+import { Loader2, Zap, CheckCircle, XCircle, QrCode, Clock, RefreshCw, Phone, Power, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { PrimaryButton, DestructiveButton, SecondaryButton } from "@/components/ui/CustomButton";
+import { useSession } from "@/contexts/SessionContext";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
+import { agentService } from "@/services/zapCorretor";
+import { useNavigate } from "react-router-dom";
 
 interface WhatsappStatusCompactProps {
-  isAgent: boolean; // True for independent agents, false for ADMIN_TENANT
+  isAgentAutonomous: boolean; // True for independent agents (AGENT with tenant_id = null)
+  onManageClick: () => void; // Callback to navigate to the full settings page
 }
 
-const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgent }) => {
-  const { statusData, isLoadingStatus } = useUazapiInstanceStatus();
+const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAutonomous, onManageClick }) => {
+  const { profile, refreshProfile } = useSession();
+  const navigate = useNavigate();
 
-  const statusInfo = React.useMemo(() => {
+  // --- Lógica para Agentes Autônomos e Admin (com Uazapi) ---
+  const { statusData, isLoadingStatus, errorStatus, refetchStatus } = useUazapiInstanceStatus();
+  const { 
+    isCreating, 
+    isConnecting, 
+    isDisconnecting, 
+    createInstance, 
+    connectInstance, 
+    disconnectInstance 
+  } = useUazapiInstanceActions(refetchStatus);
+  
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+  const [pairCodeData, setPairCodeData] = useState<string | null>(null);
+  
+  const isActionLoading = isCreating || isConnecting || isDisconnecting;
+
+  const handleConnect = async () => {
+    setQrCodeData(null);
+    setPairCodeData(null);
+    const response = await connectInstance();
+    
+    if (response?.qrcode_base64) {
+      setQrCodeData(response.qrcode_base64);
+    } else if (response?.pairingCode) {
+      setPairCodeData(response.pairingCode);
+    }
+  };
+  
+  const handleDisconnect = async () => {
+    await disconnectInstance();
+    setQrCodeData(null);
+    setPairCodeData(null);
+  };
+
+  const statusInfo = useMemo(() => {
     const status = statusData?.status || 'unknown';
     
     switch (status) {
@@ -37,33 +82,133 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgent }
   const Icon = statusInfo.icon;
   const statusVariant = statusInfo.variant as "default" | "secondary" | "destructive" | "outline" | "success" | "warning";
 
-  if (isLoadingStatus) {
+  // --- Lógica para Agentes Vinculados (sem Uazapi própria, apenas alertas) ---
+  const [isAlertsEnabled, setIsAlertsEnabled] = useState(profile?.schedule_enabled ?? false);
+  const [isUpdatingAlerts, setIsUpdatingAlerts] = useState(false);
+  const [whatsappAlertNumber, setWhatsappAlertNumber] = useState(profile?.whatsapp_alert_number || "");
+
+  // Update local state when profile changes
+  React.useEffect(() => {
+    setIsAlertsEnabled(profile?.schedule_enabled ?? false);
+    setWhatsappAlertNumber(profile?.whatsapp_alert_number || "");
+  }, [profile]);
+
+  const handleToggleAlerts = async (checked: boolean) => {
+    if (!profile) return;
+    setIsUpdatingAlerts(true);
+    const toastId = showLoading(checked ? "Ativando alertas..." : "Pausando alertas...");
+    try {
+      await agentService.saveSettings({ schedule_enabled: checked });
+      setIsAlertsEnabled(checked);
+      showSuccess(checked ? "Alertas ativados!" : "Alertas pausados.");
+      await refreshProfile(); // Refresh profile to update context
+    } catch (error) {
+      console.error("Error toggling alerts:", error);
+      showError(error instanceof Error ? error.message : "Falha ao alterar status dos alertas.");
+    } finally {
+      dismissToast(toastId);
+      setIsUpdatingAlerts(false);
+    }
+  };
+
+  // --- Renderização Condicional ---
+
+  // Caso 1: Agente vinculado a uma corretora (tenant_id não nulo)
+  if (!isAgentAutonomous && profile?.tenant_id !== null && profile?.role === 'AGENT') {
     return (
-      <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        <span>Carregando...</span>
+      <div className="p-3 border rounded-xl shadow-sm bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:shadow-md" onClick={onManageClick}>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <Phone className="h-4 w-4 text-brand" /> Alertas de WhatsApp
+          </h3>
+          <Badge variant={isAlertsEnabled ? "success" : "destructive"}>
+            {isAlertsEnabled ? "ATIVO" : "PAUSADO"}
+          </Badge>
+        </div>
+        <p className="text-xs text-muted-foreground mb-2">
+          Número: {whatsappAlertNumber || "Não configurado"}
+        </p>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="alerts-toggle" className="text-xs">Receber Alertas</Label>
+          <Switch
+            id="alerts-toggle"
+            checked={isAlertsEnabled}
+            onCheckedChange={handleToggleAlerts}
+            disabled={isUpdatingAlerts}
+            onClick={(e) => e.stopPropagation()} // Prevent triggering onManageClick
+          />
+        </div>
       </div>
     );
   }
 
+  // Caso 2: Admin da Corretora ou Agente Autônomo (com Uazapi)
+  const title = isAgentAutonomous ? "Meu WhatsApp" : "WhatsApp Central";
+  const currentNumber = profile?.whatsapp_alert_number || profile?.instance_id ? "ID: " + profile.instance_id?.substring(0, 8) + "..." : "N/A";
+
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div className={cn(
-          "flex items-center gap-2 p-2 rounded-md text-sm font-medium",
-          statusData?.status === 'connected' ? "bg-success/10 text-success" : "bg-muted/50 text-muted-foreground"
-        )}>
-          <Icon className="h-4 w-4" />
-          <span>{isAgent ? "Meu WhatsApp" : "WhatsApp Central"}</span>
-          <Badge variant={statusVariant} className="ml-auto">
-            {statusInfo.text}
-          </Badge>
+    <div className="p-3 border rounded-xl shadow-sm bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:shadow-md" onClick={onManageClick}>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <Zap className="h-4 w-4 text-brand" /> {title}
+        </h3>
+        <Badge variant={statusVariant}>
+          {statusInfo.text}
+        </Badge>
+      </div>
+      
+      {isLoadingStatus ? (
+        <div className="flex items-center text-xs text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin mr-1" /> Carregando...
         </div>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>{statusInfo.tooltip}</p>
-      </TooltipContent>
-    </Tooltip>
+      ) : (
+        <>
+          <p className="text-xs text-muted-foreground mb-2">
+            {profile?.whatsapp_alert_number ? `Número: ${profile.whatsapp_alert_number}` : `Instância: ${currentNumber}`}
+          </p>
+          {qrCodeData && (
+            <div className="text-center my-2">
+              <img 
+                src={`data:image/png;base64,${qrCodeData}`} 
+                alt="QR Code" 
+                className="mx-auto w-24 h-24 object-contain"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Escaneie o QR Code</p>
+            </div>
+          )}
+          {pairCodeData && (
+            <div className="text-center my-2">
+              <p className="text-lg font-bold text-brand tracking-widest">{pairCodeData}</p>
+              <p className="text-xs text-muted-foreground mt-1">Use o Pair Code</p>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2 mt-3">
+            {statusData?.status === 'no_instance' && (
+              <PrimaryButton size="sm" onClick={(e) => { e.stopPropagation(); createInstance(); }} disabled={isActionLoading}>
+                {isCreating ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : "Criar Instância"}
+              </PrimaryButton>
+            )}
+            
+            {(statusData?.status === 'disconnected' || statusData?.status === 'created' || statusData?.status === 'waiting_qr' || statusData?.status === 'waiting_pair') && statusData.hasInstance && (
+              <PrimaryButton size="sm" onClick={(e) => { e.stopPropagation(); handleConnect(); }} disabled={isActionLoading}>
+                {isConnecting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : "Conectar WhatsApp"}
+              </PrimaryButton>
+            )}
+            
+            {statusData?.status === 'connected' && (
+              <DestructiveButton size="sm" onClick={(e) => { e.stopPropagation(); handleDisconnect(); }} disabled={isActionLoading}>
+                {isDisconnecting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : "Desconectar WhatsApp"}
+              </DestructiveButton>
+            )}
+            
+            <SecondaryButton size="sm" onClick={(e) => { e.stopPropagation(); refetchStatus(); }} disabled={isActionLoading || isLoadingStatus}>
+              <RefreshCw className="h-3 w-3 mr-1" /> Atualizar Status
+            </SecondaryButton>
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 

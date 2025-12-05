@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -34,6 +34,7 @@ const navItems: NavItem[] = [
 const AdminSidebar: React.FC = () => {
   const location = useLocation();
   const { profile } = useSession();
+  const navigate = useNavigate();
   
   const tenantName = profile?.tenant_name || "Corretora";
 
@@ -76,7 +77,10 @@ const AdminSidebar: React.FC = () => {
         })}
       </nav>
       <div className="p-2 border-t space-y-2">
-        <WhatsappStatusCompact isAgent={false} /> {/* Admin (Corretora) WhatsApp Status */}
+        <WhatsappStatusCompact 
+          isAgentAutonomous={false} 
+          onManageClick={() => navigate('/admin/whatsapp')} 
+        /> {/* Admin (Corretora) WhatsApp Status */}
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 rounded-xl p-3 text-sm font-medium w-full text-left text-destructive hover:bg-destructive/10 transition-colors duration-200"

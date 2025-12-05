@@ -1,8 +1,7 @@
 import React from "react";
 import { useSession } from "@/contexts/SessionContext";
-import WhatsAppConnectionCard from "@/components/agent/WhatsAppConnectionCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Zap, MessageSquare } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 
 const AdminWhatsappPage = () => {
   const { profile } = useSession();
@@ -13,15 +12,15 @@ const AdminWhatsappPage = () => {
       <h1 className="text-3xl font-bold text-brand">WhatsApp Central da {tenantName}</h1>
       <p className="text-muted-foreground">Gerencie a conexão do número central do WhatsApp usado para receber leads e enviar notificações.</p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Connection Status Card (Reusing Agent component, assuming ADMIN manages the central instance) */}
-        <WhatsAppConnectionCard />
+      <div className="grid grid-cols-1 gap-6">
+        {/* O status e ações principais do WhatsApp Central agora estão no sidebar */}
+        {/* Este espaço pode ser usado para configurações avançadas, como templates de mensagem, etc. */}
         
         {/* Central Number Info */}
         <Card className="rounded-xl shadow-md">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5" /> Número Central
+                    <MessageSquare className="w-5 h-5" /> Número Central Configurado
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">

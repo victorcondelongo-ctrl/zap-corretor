@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Outlet, Link, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet, Link, Navigate, useNavigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LeadsPage from "./pages/admin/LeadsPage";
@@ -49,7 +49,10 @@ const handleLogout = async () => {
 const AgentLayout = () => {
   const { profile } = useSession();
   const agentName = profile?.full_name || "Corretor";
+  const navigate = useNavigate();
   
+  const isAgentAutonomous = profile?.tenant_id === null;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="p-4 border-b shadow-sm">
@@ -68,9 +71,12 @@ const AgentLayout = () => {
       </header>
       <main className="max-w-7xl mx-auto pb-10">
         <div className="p-4">
-            {profile?.tenant_id === null && ( // Only show for independent agents
+            {profile && (
                 <div className="mb-4">
-                    <WhatsappStatusCompact isAgent={true} />
+                    <WhatsappStatusCompact 
+                        isAgentAutonomous={isAgentAutonomous} 
+                        onManageClick={() => navigate('/agent/settings')} 
+                    />
                 </div>
             )}
             <Outlet />

@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Users, Target, CheckCircle, Clock, XCircle, DollarSign } from "lucide-react";
 import { showError } from "@/utils/toast";
 import { Separator } from "@/components/ui/separator";
-import WhatsAppConnectionCard from "@/components/agent/WhatsAppConnectionCard"; // Import new component
 import { cn } from "@/lib/utils";
 
 // --- Helper Components ---
@@ -114,12 +113,10 @@ const AgentDashboardPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* WhatsApp Connection Card (New) */}
-        <div className="lg:col-span-1">
-            <WhatsAppConnectionCard />
-        </div>
+        {/* Removido: <div className="lg:col-span-1"><WhatsAppConnectionCard /></div> */}
         
         {/* Metrics */}
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard title="Total de Leads" value={totalLeads} icon={<Users className="h-4 w-4 text-muted-foreground" />} />
             <MetricCard title="Qualificados" value={counts.qualified || 0} icon={<Target className="h-4 w-4 text-success" />} />
             <MetricCard title="Vendas no Mês" value={totalSales} icon={<DollarSign className="h-4 w-4 text-brand" />} />

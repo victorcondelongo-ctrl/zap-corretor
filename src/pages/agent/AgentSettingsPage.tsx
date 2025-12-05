@@ -37,11 +37,7 @@ const formSchema = z.object({
   aiPrompt: z.string().nullable(),
   followup30minEnabled: z.boolean(),
   followup24hEnabled: z.boolean(),
-  // New fields for independent agents
-  whatsappAlertNumber: phoneValidator,
-  canExportLeads: z.boolean(),
-  scheduleEnabled: z.boolean(),
-  scheduleConfig: z.record(z.string(), dayScheduleSchema).nullable(),
+  // Removed: whatsappAlertNumber, canExportLeads, scheduleEnabled, scheduleConfig
 });
 
 type AgentSettingsFormValues = z.infer<typeof formSchema>;
@@ -57,10 +53,6 @@ const AgentSettingsPage = () => {
       aiPrompt: "",
       followup30minEnabled: true,
       followup24hEnabled: true,
-      whatsappAlertNumber: "",
-      canExportLeads: false,
-      scheduleEnabled: false,
-      scheduleConfig: null,
     },
   });
 
@@ -69,17 +61,10 @@ const AgentSettingsPage = () => {
     try {
       const settings = await agentService.getSettings();
       
-      // Fetch profile again to get the latest whatsapp_alert_number
-      // NOTE: getCurrentProfile now fetches settings, so we use the number from the settings object
-      
       form.reset({
         aiPrompt: settings.ai_prompt || "",
         followup30minEnabled: settings.followup_30min_enabled,
         followup24hEnabled: settings.followup_24h_enabled,
-        whatsappAlertNumber: settings.whatsapp_alert_number || "",
-        canExportLeads: settings.can_export_leads,
-        scheduleEnabled: settings.schedule_enabled,
-        scheduleConfig: settings.schedule_config,
       });
     } catch (error) {
       showError("Erro ao carregar configurações: " + (error instanceof Error ? error.message : "Desconhecido"));
@@ -99,19 +84,9 @@ const AgentSettingsPage = () => {
         ai_prompt: values.aiPrompt,
         followup_30min_enabled: values.followup30minEnabled,
         followup_24h_enabled: values.followup24hEnabled,
-        can_export_leads: values.canExportLeads,
-        schedule_enabled: values.scheduleEnabled,
-        // Ensure scheduleConfig is correctly typed as AgentScheduleConfig | null
-        schedule_config: values.scheduleEnabled ? (values.scheduleConfig as AgentScheduleConfig) : null,
-        whatsapp_alert_number: values.whatsappAlertNumber, // FIX: Now correctly typed in ZapAgentSettings
       };
       
       await agentService.saveSettings(settingsPayload);
-      
-      // If independent agent updated their number, refresh profile context
-      if (isIndependentAgent) {
-          await refreshProfile();
-      }
       
       showSuccess("Configurações salvas com sucesso!");
     } catch (error) {
@@ -144,51 +119,46 @@ const AgentSettingsPage = () => {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           
           {/* WhatsApp Alert Number (Editable only for Independent Agents) */}
-          <Card className="rounded-xl shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Phone className="w-5 h-5" /> Contato e Alertas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <FormField
-                  control={form.control}
-                  name="whatsappAlertNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>WhatsApp para Alertas de Leads (55DDINúmero)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Ex: 5511999999999" 
-                          {...field} 
-                          value={field.value || ''}
-                          disabled={isSubmitting || !isIndependentAgent}
-                          className={!isIndependentAgent ? "bg-muted/50" : ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                      {!isIndependentAgent && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                              Seu número de alerta é gerenciado pela sua corretora.
-                          </p>
-                      )}
-                    </FormItem>
-                  )}
-                />
-            </CardContent>
-          </Card>
+          {isIndependentAgent && (
+            <Card className="rounded-xl shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Phone className="w-5 h-5" /> Contato e Alertas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FormItem>
+                  <FormLabel>WhatsApp para Alertas de Leads (55DDINúmero)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Ex: 5511999999999" 
+                      value={profile.whatsapp_alert_number || ''} // Use profile directly
+                      disabled={true} // Managed by the compact card
+                      className={"bg-muted/50"}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-xs text-muted-foreground mt-2">
+                      Este número é gerenciado pelo card de "Meu WhatsApp" no topo da página.
+                  </p>
+                </FormItem>
+              </CardContent>
+            </Card>
+          )}
           
           <Separator />
           
           {/* Configuração de Escala */}
-          <Card className="rounded-xl shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5" /> Configuração de Escala</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <AgentScheduleForm isSubmitting={isSubmitting} />
-            </CardContent>
-          </Card>
+          {isIndependentAgent && (
+            <Card className="rounded-xl shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5" /> Configuração de Escala</CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <AgentScheduleForm isSubmitting={isSubmitting} /> {/* This form uses form.watch, so it needs to be connected */}
+              </CardContent>
+            </Card>
+          )}
           
           <Separator />
 
@@ -250,28 +220,34 @@ const AgentSettingsPage = () => {
               </div>
               
               {/* Export Permission (Editable only for Independent Agents) */}
-              <FormField
-                control={form.control}
-                name="canExportLeads"
-                render={({ field }) => (
-                  <FormItem className="flex items-center justify-between space-x-2 border-b pb-4">
-                    <Label htmlFor="can-export-toggle" className="flex flex-col space-y-1">
-                      <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Permitir Exportação de Leads</span>
-                      <span className="font-normal leading-snug text-muted-foreground">
-                        Permite que você exporte seus leads (CSV/XLSX).
-                      </span>
-                    </Label>
-                    <FormControl>
-                      <Switch
-                        id="can-export-toggle"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isSubmitting || !isIndependentAgent}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+              {isIndependentAgent && (
+                <FormItem className="flex items-center justify-between space-x-2 border-b pb-4">
+                  <Label htmlFor="can-export-toggle" className="flex flex-col space-y-1">
+                    <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Permitir Exportação de Leads</span>
+                    <span className="font-normal leading-snug text-muted-foreground">
+                      Permite que você exporte seus leads (CSV/XLSX).
+                    </span>
+                  </Label>
+                  <FormControl>
+                    <Switch
+                      id="can-export-toggle"
+                      checked={profile.can_export_leads ?? false} // Use profile directly
+                      onCheckedChange={(checked) => {
+                        // Handle update directly via agentService
+                        const toastId = showLoading("Atualizando permissão...");
+                        agentService.saveSettings({ can_export_leads: checked })
+                          .then(() => {
+                            showSuccess("Permissão atualizada!");
+                            refreshProfile();
+                          })
+                          .catch(error => showError(error instanceof Error ? error.message : "Falha ao atualizar permissão."))
+                          .finally(() => dismissToast(toastId));
+                      }}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
 
               <FormField
                 control={form.control}
