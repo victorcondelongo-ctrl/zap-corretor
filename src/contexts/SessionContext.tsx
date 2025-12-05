@@ -28,6 +28,7 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
   const subscriptionRef = useRef<ReturnType<typeof supabase.auth.onAuthStateChange> | null>(null);
 
   const fetchProfile = useCallback(async (currentUser: User | null) => {
+    console.log("[SessionContext] fetchProfile() chamado com currentUser:", currentUser ? currentUser.id : "null");
     if (!currentUser) {
       console.log("[SessionContext] fetchProfile(): sem user, limpando profile");
       setProfile(null);

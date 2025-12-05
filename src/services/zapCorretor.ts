@@ -234,13 +234,16 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
     console.log("[getCurrentProfile] after getUser", { user, userError });
 
     if (userError) {
+      console.error("[getCurrentProfile] userError:", userError);
       throw userError;
     }
     if (!user) {
+      console.warn("[getCurrentProfile] User not authenticated.");
       throw new Error("User not authenticated.");
     }
 
     // Fetch profile, agent settings, and tenant name (if applicable)
+    console.log(`[getCurrentProfile] Fetching profile for user ID: ${user.id}`);
     const { data: profile, error } = await supabase
       .from("profiles")
       .select("*, agent_settings(can_export_leads, schedule_enabled, schedule_config), tenants(name)")
@@ -250,11 +253,12 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
     console.log("[getCurrentProfile] query result", { profile, error });
 
     if (error) {
-      console.error("Supabase Profile Fetch Error:", error);
+      console.error("[getCurrentProfile] Supabase Profile Fetch Error:", error);
       throw new Error(`Failed to fetch profile: ${error.message}`);
     }
 
     if (!profile) {
+      console.error(`[getCurrentProfile] Profile not found for user ID: ${user.id}`);
       throw new Error(`Profile not found for user ID: ${user.id}`);
     }
 
@@ -276,10 +280,10 @@ export async function getCurrentProfile(): Promise<ZapProfile> {
       schedule_config: profile.agent_settings?.[0]?.schedule_config ?? null,
     };
 
-    console.log("[getCurrentProfile] success, returning profile");
+    console.log("[getCurrentProfile] success, returning profile:", typedProfile);
     return typedProfile;
   } catch (e) {
-    console.error("[getCurrentProfile] error", e);
+    console.error("[getCurrentProfile] error caught:", e);
     throw e;
   }
 }
