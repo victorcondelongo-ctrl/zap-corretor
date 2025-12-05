@@ -157,7 +157,7 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
   // Caso 1: Agente vinculado a uma corretora (tenant_id não nulo)
   if (!isAgentAutonomous && profile?.tenant_id !== null && profile?.role === 'AGENT') {
     return (
-      <div className="p-3 border rounded-xl shadow-sm bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:shadow-md" onClick={onManageClick}>
+      <div className="p-3 border rounded-xl shadow-sm bg-card text-card-foreground transition-all duration-200 hover:shadow-md">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-semibold flex items-center gap-2">
             <Phone className="h-4 w-4 text-brand" /> Alertas de WhatsApp
@@ -176,19 +176,21 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
             checked={isAlertsEnabled}
             onCheckedChange={handleToggleAlerts}
             disabled={isUpdatingAlerts}
-            onClick={(e) => e.stopPropagation()} // Prevent triggering onManageClick
           />
         </div>
+        <SecondaryButton size="sm" onClick={onManageClick} className="w-full mt-3">
+            <Settings className="h-3 w-3 mr-1" /> Gerenciar
+        </SecondaryButton>
       </div>
     );
   }
 
   // Caso 2: Admin da Corretora ou Agente Autônomo (com Uazapi)
   const title = isAgentAutonomous ? "Meu WhatsApp" : "WhatsApp Central";
-  const currentNumber = profile?.whatsapp_alert_number || profile?.instance_id ? "ID: " + profile.instance_id?.substring(0, 8) + "..." : "N/A";
+  const currentNumber = profile?.instance_name || "N/A"; // Usar instance_name para exibir
 
   return (
-    <div className="p-3 border rounded-xl shadow-sm bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:shadow-md">
+    <div className="p-3 border rounded-xl shadow-sm bg-card text-card-foreground transition-all duration-200 hover:shadow-md">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-semibold flex items-center gap-2">
           <Zap className="h-4 w-4 text-brand" /> {title}
@@ -223,7 +225,7 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
       ) : (
         <>
           <p className="text-xs text-muted-foreground mb-2">
-            {profile?.whatsapp_alert_number ? `Número: ${profile.whatsapp_alert_number}` : `Instância: ${currentNumber}`}
+            Instância: {currentNumber}
           </p>
           {qrCodeData && (
             <div className="text-center my-2">
@@ -268,7 +270,7 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
             )}
             
             {/* Botão de configurações para a página completa */}
-            <SecondaryButton size="sm" onClick={(e) => { e.stopPropagation(); onManageClick(); }}>
+            <SecondaryButton size="sm" onClick={onManageClick} className="w-full">
                 <Settings className="h-3 w-3 mr-1" /> Gerenciar
             </SecondaryButton>
           </div>
