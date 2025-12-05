@@ -190,9 +190,15 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
               </PrimaryButton>
             )}
             
-            {(statusData?.status === 'disconnected' || statusData?.status === 'created' || statusData?.status === 'waiting_qr' || statusData?.status === 'waiting_pair') && statusData.hasInstance && (
+            {(statusData?.status === 'disconnected' || statusData?.status === 'created') && statusData.hasInstance && (
               <PrimaryButton size="sm" onClick={(e) => { e.stopPropagation(); handleConnect(); }} disabled={isActionLoading}>
                 {isConnecting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : "Conectar WhatsApp"}
+              </PrimaryButton>
+            )}
+
+            {(statusData?.status === 'waiting_qr' || statusData?.status === 'waiting_pair') && statusData.hasInstance && (
+              <PrimaryButton size="sm" onClick={(e) => { e.stopPropagation(); handleConnect(); }} disabled={isActionLoading}>
+                {isConnecting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : "Mostrar QR / Pair Code"}
               </PrimaryButton>
             )}
             
