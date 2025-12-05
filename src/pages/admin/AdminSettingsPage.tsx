@@ -45,6 +45,7 @@ const AdminSettingsPage = () => {
   const { profile, refreshProfile } = useSession();
   const [loading, setLoading] = React.useState(true);
   
+  // Derivar o nome da corretora do perfil atual para garantir reatividade
   const tenantName = profile?.tenant_name || "Corretora";
 
   const form = useForm<AdminSettingsFormValues>({
@@ -75,8 +76,11 @@ const AdminSettingsPage = () => {
   }, [form]);
 
   useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+    // Se o profile carregar ou mudar (ex: após refreshProfile), recarregamos as configurações
+    if (profile) {
+        fetchSettings();
+    }
+  }, [profile, fetchSettings]); // Dependência no profile garante que o fetchSettings rode após o refresh
 
   const onSubmit = async (values: AdminSettingsFormValues) => {
     const toastId = showLoading("Salvando configurações da corretora...");
@@ -134,7 +138,7 @@ const AdminSettingsPage = () => {
                   <FormItem>
                     <FormLabel>Nome</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome da sua corretora" {...field} />
+                      <Input placeholder="Nome da sua corretora" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
