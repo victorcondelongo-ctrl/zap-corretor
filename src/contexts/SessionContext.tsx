@@ -43,6 +43,9 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
     } catch (error) {
       console.error("[SessionContext] fetchProfile() error", error);
       setProfile(null);
+      // Se houver um erro ao buscar o perfil, pode indicar um problema com a sessão
+      // ou que o perfil não existe mais. Forçamos o logout para limpar o estado.
+      await supabase.auth.signOut();
     }
   }, []);
 
@@ -66,6 +69,8 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
           console.warn("[SessionContext] No valid user, treating as signed out", error);
           setUser(null);
           setProfile(null);
+          // Forçar logout para limpar qualquer token inválido no local storage
+          await supabase.auth.signOut(); 
           setLoading(false);
           return;
         }
@@ -80,6 +85,12 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
         } else {
           setProfile(null);
         }
+      } catch (e) {
+        console.error("[SessionContext] loadInitial() caught error:", e);
+        // Em caso de erro inesperado ao carregar o usuário, também forçamos o logout
+        await supabase.auth.signOut();
+        setUser(null);
+        setProfile(null);
       } finally {
         if (isMounted) {
           console.log("[SessionContext] loadInitial() finished → setLoading(false)");
