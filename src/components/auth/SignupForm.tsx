@@ -143,7 +143,8 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
                 phone: values.phone,
                 role: role, // Passando o role para o trigger handle_new_user
                 tenant_name: tenantName, // Passando o nome do tenant (se for ADMIN_TENANT)
-            }
+            },
+            emailRedirectTo: `${window.location.origin}/login`, // Redireciona para /login após confirmação
         }
       });
 
