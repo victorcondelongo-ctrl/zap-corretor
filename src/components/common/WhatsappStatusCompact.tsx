@@ -176,6 +176,7 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
             checked={isAlertsEnabled}
             onCheckedChange={handleToggleAlerts}
             disabled={isUpdatingAlerts}
+            onClick={(e) => e.stopPropagation()} // Prevent triggering onManageClick
           />
         </div>
         <SecondaryButton size="sm" onClick={onManageClick} className="w-full mt-3">
@@ -187,7 +188,8 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
 
   // Caso 2: Admin da Corretora ou Agente Autônomo (com Uazapi)
   const title = isAgentAutonomous ? "Meu WhatsApp" : "WhatsApp Central";
-  const currentNumber = profile?.instance_name || "N/A"; // Usar instance_name para exibir
+  // Usamos profile.instance_name para exibir o nome da instância, se existir
+  const instanceDisplayName = profile?.instance_name || "N/A"; 
 
   return (
     <div className="p-3 border rounded-xl shadow-sm bg-card text-card-foreground transition-all duration-200 hover:shadow-md">
@@ -225,7 +227,7 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
       ) : (
         <>
           <p className="text-xs text-muted-foreground mb-2">
-            Instância: {currentNumber}
+            Instância: {instanceDisplayName}
           </p>
           {qrCodeData && (
             <div className="text-center my-2">
@@ -245,24 +247,21 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
           )}
 
           <div className="flex flex-col gap-2 mt-3">
+            {/* Botão "Criar Instância" aparece se o status for 'no_instance' */}
             {statusData?.status === 'no_instance' && (
               <PrimaryButton size="sm" onClick={(e) => { e.stopPropagation(); createInstance(); }} disabled={isActionLoading}>
                 {isCreating ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : "Criar Instância"}
               </PrimaryButton>
             )}
             
-            {(statusData?.status === 'disconnected' || statusData?.status === 'created') && statusData.hasInstance && (
+            {/* Botões de Conectar/Mostrar QR/Pair Code aparecem se houver instância mas não estiver conectado */}
+            {(statusData?.status === 'disconnected' || statusData?.status === 'created' || statusData?.status === 'waiting_qr' || statusData?.status === 'waiting_pair') && statusData.hasInstance && (
               <PrimaryButton size="sm" onClick={(e) => { e.stopPropagation(); handleConnect(); }} disabled={isActionLoading}>
                 {isConnecting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : "Conectar WhatsApp"}
               </PrimaryButton>
             )}
-
-            {(statusData?.status === 'waiting_qr' || statusData?.status === 'waiting_pair') && statusData.hasInstance && (
-              <PrimaryButton size="sm" onClick={(e) => { e.stopPropagation(); handleConnect(); }} disabled={isActionLoading}>
-                {isConnecting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : "Mostrar QR / Pair Code"}
-              </PrimaryButton>
-            )}
             
+            {/* Botão de Desconectar aparece se estiver conectado */}
             {statusData?.status === 'connected' && (
               <DestructiveButton size="sm" onClick={(e) => { e.stopPropagation(); handleDisconnect(); }} disabled={isActionLoading}>
                 {isDisconnecting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : "Desconectar WhatsApp"}

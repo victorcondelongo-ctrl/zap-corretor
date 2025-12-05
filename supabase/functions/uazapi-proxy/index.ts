@@ -240,6 +240,7 @@ serve(async (req) => {
       }
 
       case "status": {
+        // Se não houver instance_id ou instance_token no perfil, significa que não há instância criada na Uazapi
         if (!instance_id || !instance_token) {
             return new Response(JSON.stringify({ hasInstance: false, status: "no_instance" }), {
                 status: 200,
@@ -256,7 +257,7 @@ serve(async (req) => {
           instance_token,
         );
         
-        let currentStatus = "created";
+        let currentStatus = "created"; // Default if instance exists but status is not yet connected/disconnected
         if (uazapiResponse.status === "connected") {
             currentStatus = "connected";
         } else if (uazapiResponse.status === "disconnected") {
