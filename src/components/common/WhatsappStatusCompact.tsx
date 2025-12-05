@@ -188,14 +188,32 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
   const currentNumber = profile?.whatsapp_alert_number || profile?.instance_id ? "ID: " + profile.instance_id?.substring(0, 8) + "..." : "N/A";
 
   return (
-    <div className="p-3 border rounded-xl shadow-sm bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:shadow-md" onClick={onManageClick}>
+    <div className="p-3 border rounded-xl shadow-sm bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:shadow-md">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-semibold flex items-center gap-2">
           <Zap className="h-4 w-4 text-brand" /> {title}
         </h3>
-        <Badge variant={statusVariant}>
-          {statusInfo.text}
-        </Badge>
+        <div className="flex items-center gap-2">
+            <Badge variant={statusVariant}>
+              {statusInfo.text}
+            </Badge>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6" 
+                        onClick={(e) => { e.stopPropagation(); refetchStatus(); }} 
+                        disabled={isActionLoading || isLoadingStatus}
+                    >
+                        {isLoadingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Atualizar Status Manualmente</p>
+                </TooltipContent>
+            </Tooltip>
+        </div>
       </div>
       
       {isLoadingStatus ? (
@@ -249,8 +267,9 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
               </DestructiveButton>
             )}
             
-            <SecondaryButton size="sm" onClick={(e) => { e.stopPropagation(); refetchStatus(); }} disabled={isActionLoading || isLoadingStatus}>
-              <RefreshCw className="h-3 w-3 mr-1" /> Atualizar Status
+            {/* Botão de configurações para a página completa */}
+            <SecondaryButton size="sm" onClick={(e) => { e.stopPropagation(); onManageClick(); }}>
+                <Settings className="h-3 w-3 mr-1" /> Gerenciar
             </SecondaryButton>
           </div>
         </>
