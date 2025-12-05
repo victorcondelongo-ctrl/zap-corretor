@@ -1,3 +1,4 @@
+// @ts-nocheck
 // As importações de URL e referências de tipo são gerenciadas pelo ambiente Deno e não devem ser incluídas aqui para evitar erros de compilação local.
 // import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 // import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
@@ -34,16 +35,24 @@ function createSupabaseAdminClient() {
 // Função auxiliar para obter o usuário autenticado
 async function getAuthenticatedUser(req: Request) {
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return null;
+  const userIdHeader = req.headers.get("x-user-id"); // Custom header for internal calls
 
-  const token = authHeader.replace("Bearer ", "");
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-  );
+  const supabaseAdmin = createSupabaseAdminClient();
 
-  const { data: { user } = {} } = await supabase.auth.getUser(token); // Adicionado {} para desestruturação segura
-  return user;
+  if (authHeader && authHeader.startsWith("Bearer eyJhbGciOiJIUzI1NiIsIml")) { // Check if it's a JWT (anon key)
+    const token = authHeader.replace("Bearer ", "");
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+    );
+    const { data: { user } = {} } = await supabase.auth.getUser(token);
+    return user;
+  } else if (authHeader && authHeader.startsWith(`Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`) && userIdHeader) {
+    // Internal call from another Edge Function using service role key
+    const { data: { user } = {} } = await supabaseAdmin.auth.admin.getUserById(userIdHeader);
+    return user;
+  }
+  return null;
 }
 
 // Função auxiliar para gerar o nome da instância (zapcro + email_part + 4_timestamp_digits)
