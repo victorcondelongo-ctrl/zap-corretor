@@ -31,7 +31,6 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
-import WhatsAppStatusBadge from "@/components/shared/WhatsAppStatusBadge"; // Import the new component
 
 const queryClient = new QueryClient();
 
@@ -60,8 +59,6 @@ const AgentLayout = () => {
             <Link to="/agent/leads" className="text-sm font-medium hover:text-primary">Meus Leads</Link>
             <Link to="/agent/settings" className="text-sm font-medium hover:text-primary">Configurações</Link>
             <Link to="/agent/profile" className="text-sm font-medium hover:text-primary">Perfil</Link>
-            {/* WhatsApp Status Badge for Agent */}
-            <WhatsAppStatusBadge />
             <Button variant="ghost" size="sm" onClick={handleLogout} className="text-sm font-medium text-destructive hover:bg-destructive/10">
                 <LogOut className="w-4 h-4 mr-1" /> Sair
             </Button>
