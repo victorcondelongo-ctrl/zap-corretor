@@ -1,8 +1,11 @@
-/// <reference types="https://deno.land/std@0.190.0/http/server.ts" />
-/// <reference types="https://esm.sh/@supabase/supabase-js@2.45.0" />
+// As importações de URL e referências de tipo são gerenciadas pelo ambiente Deno e não devem ser incluídas aqui para evitar erros de compilação local.
+// import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+// import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+// Para fins de tipagem local no VSCode, você pode adicionar:
+// declare const Deno: any;
+// declare const serve: any;
+// declare const createClient: any;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,7 +42,7 @@ async function getAuthenticatedUser(req: Request) {
     Deno.env.get("SUPABASE_ANON_KEY")!,
   );
 
-  const { data: { user } } = await supabase.auth.getUser(token);
+  const { data: { user } = {} } = await supabase.auth.getUser(token); // Adicionado {} para desestruturação segura
   return user;
 }
 
@@ -127,14 +130,14 @@ serve(async (req) => {
     // 1. Fetch profile data (instance_name, instance_id, instance_token)
     const { data: profile, error: profileError } = await supabaseAdmin
         .from("profiles")
-        .select("id, email, instance_name, instance_id, instance_token")
+        .select("id, email, instance_name, instance_id, instance_token, tenant_id")
         .eq("id", user.id)
         .single();
 
     if (profileError) throw profileError;
     if (!profile) throw new Error("User profile not found.");
 
-    const { instance_name, instance_id, instance_token } = profile;
+    const { instance_name, instance_id, instance_token, tenant_id } = profile;
     let updated_at = new Date().toISOString();
     let uazapiResponse: any;
 
@@ -152,7 +155,7 @@ serve(async (req) => {
         }
         
         // 1. Gerar nome da instância (usando a regra zapcro...)
-        const generatedInstanceName = generateInstanceName(user.email || 'unknown');
+        const generatedInstanceName = instance_name || generateInstanceName(user.email || 'unknown');
         
         // 2. Chamar Uazapi para criar
         uazapiResponse = await callUazapi(
@@ -185,14 +188,36 @@ serve(async (req) => {
 
         if (updateError) throw updateError;
         
-        // 4. Invocar RPC create_user_table (Assumindo que esta RPC existe e configura o DB)
-        const supabaseServiceRole = createSupabaseAdminClient();
-        const { error: rpcError } = await supabaseServiceRole.rpc('create_user_table', {
-            p_table_name: generatedInstanceName,
-        });
+        // 4. Se for ADMIN_TENANT, configurar o webhook
+        if (profile.tenant_id) { // Assuming ADMIN_TENANT has a tenant_id
+            const { data: globalSettings, error: settingsError } = await supabaseAdmin
+                .from("global_settings")
+                .select("value")
+                .eq("key", "n8n_webhook_url")
+                .single();
 
-        if (rpcError) {
-            console.error("Failed to create user table via RPC:", rpcError);
+            if (settingsError) {
+                console.warn("Could not fetch n8n_webhook_url from global_settings:", settingsError.message);
+            }
+
+            const n8nWebhookUrl = globalSettings?.value;
+
+            if (n8nWebhookUrl) {
+                console.log(`[Uazapi] Configuring webhook for instance ${newInstanceId} to ${n8nWebhookUrl}`);
+                await callUazapi(
+                    "/webhook",
+                    "POST",
+                    "instance",
+                    {
+                        webhookUrl: n8nWebhookUrl,
+                        events: ["messages"],
+                        ignore: ["wasSentByApi", "isGroupYes"]
+                    },
+                    newToken
+                );
+            } else {
+                console.warn("n8n_webhook_url not found in global_settings. Webhook not configured.");
+            }
         }
 
 

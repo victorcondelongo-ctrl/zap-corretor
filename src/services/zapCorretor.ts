@@ -399,6 +399,10 @@ export const adminTenantService = {
         throw new Error(`Failed to update agent profile (Edge): ${edgeError.message}`);
     }
     
+    if (edgeData && edgeData.error) {
+        throw new Error(edgeData.error);
+    }
+    
     // 4. Update Agent Settings (if any settings fields were provided)
     if (Object.keys(settingsUpdate).length > 0) {
         const settingsPayload = {
@@ -925,11 +929,12 @@ export const agentService = {
   
   /**
    * Calls the Edge Function to connect the instance (returns QR or Pair Code).
+   * @param phone Optional phone number for Pair Code connection.
    */
-  async connectInstance(): Promise<UazapiConnectResponse> {
+  async connectInstance(phone?: string): Promise<UazapiConnectResponse> {
     const { data, error } = await supabase.functions.invoke("uazapi-proxy", {
       method: "POST",
-      body: { action: 'connect' },
+      body: { action: 'connect', phone: phone || undefined },
     });
 
     if (error) {

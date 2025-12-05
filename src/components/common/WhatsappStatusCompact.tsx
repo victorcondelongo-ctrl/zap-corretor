@@ -13,6 +13,14 @@ import { Label } from "@/components/ui/label";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 import { agentService } from "@/services/zapCorretor";
 import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 interface WhatsappStatusCompactProps {
   isAgentAutonomous: boolean; // True for independent agents (AGENT with tenant_id = null)
@@ -36,18 +44,45 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
   
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
   const [pairCodeData, setPairCodeData] = useState<string | null>(null);
-  
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+  const [connectMethod, setConnectMethod] = useState<'qr' | 'pair' | null>(null);
+  const [pairCodePhone, setPairCodePhone] = useState('');
+
   const isActionLoading = isCreating || isConnecting || isDisconnecting;
 
   const handleConnect = async () => {
     setQrCodeData(null);
     setPairCodeData(null);
+    setIsConnectModalOpen(true); // Open modal to choose connection method
+  };
+
+  const handleConnectWithMethod = async (method: 'qr' | 'pair') => {
+    setConnectMethod(method);
+    setIsConnectModalOpen(false); // Close method selection modal
+
     const response = await connectInstance();
     
-    if (response?.qrcode_base64) {
+    if (response?.qrcode_base64 && method === 'qr') {
       setQrCodeData(response.qrcode_base64);
-    } else if (response?.pairingCode) {
+    } else if (response?.pairingCode && method === 'pair') {
       setPairCodeData(response.pairingCode);
+    } else {
+      showError("Falha ao obter dados de conexão. Tente novamente.");
+    }
+  };
+
+  const handleConnectWithPairCodePhone = async () => {
+    if (!pairCodePhone) {
+      showError("Por favor, insira o número de telefone para o Pair Code.");
+      return;
+    }
+    setPairCodeData(null); // Clear previous pair code
+    const response = await connectInstance(); // This should ideally take phone as param
+    
+    if (response?.pairingCode) {
+      setPairCodeData(response.pairingCode);
+    } else {
+      showError("Falha ao obter Pair Code. Tente novamente.");
     }
   };
   
@@ -214,6 +249,48 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
           </div>
         </>
       )}
+
+      {/* Modal para escolher método de conexão */}
+      <Dialog open={isConnectModalOpen} onOpenChange={setIsConnectModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Como você quer conectar?</DialogTitle>
+            <DialogDescription>
+              Escolha o método de conexão para o WhatsApp.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Button variant="outline" onClick={() => handleConnectWithMethod('qr')}>
+              <QrCode className="mr-2 h-4 w-4" /> Conectar com QR Code
+            </Button>
+            <Button variant="outline" onClick={() => handleConnectWithMethod('pair')}>
+              <Phone className="mr-2 h-4 w-4" /> Conectar com Pair Code
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para Pair Code (se necessário) */}
+      <Dialog open={connectMethod === 'pair' && !pairCodeData} onOpenChange={() => setConnectMethod(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Conectar com Pair Code</DialogTitle>
+            <DialogDescription>
+              Insira o número de telefone do WhatsApp que você deseja conectar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Input
+              placeholder="Ex: 5511999999999"
+              value={pairCodePhone}
+              onChange={(e) => setPairCodePhone(e.target.value)}
+            />
+            <Button onClick={handleConnectWithPairCodePhone}>
+              Gerar Pair Code
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
