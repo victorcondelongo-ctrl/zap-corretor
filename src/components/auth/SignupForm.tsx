@@ -19,8 +19,9 @@ import PasswordChecklist from "./PasswordChecklist";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card"; // Added imports
-import { PrimaryButton } from "@/components/ui/CustomButton"; // Import Custom Button
+import { Card, CardContent } from "@/components/ui/card";
+import { PrimaryButton } from "@/components/ui/CustomButton";
+import { Slider } from "@/components/ui/slider"; // Import Slider component
 
 // --- Constants ---
 const PRICE_INDIVIDUAL = 297;
@@ -55,14 +56,16 @@ const formSchema = z.object({
 }).refine((data) => data.password === data.confirmPassword, {
   message: "As senhas não coincidem.",
   path: ["confirmPassword"],
-}).refine((data) => {
+}).superRefine((data, ctx) => { // Use superRefine for conditional validation
     if (data.planType === 'corretora') {
-        return data.agentCount >= MIN_AGENTS_CORRETORA;
+        if (data.agentCount < MIN_AGENTS_CORRETORA) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `O plano Corretora exige no mínimo ${MIN_AGENTS_CORRETORA} corretores.`,
+                path: ["agentCount"],
+            });
+        }
     }
-    return true;
-}, {
-    message: `O plano Corretora exige no mínimo ${MIN_AGENTS_CORRETORA} corretores.`,
-    path: ["agentCount"],
 });
 
 type SignupFormValues = z.infer<typeof formSchema>;
@@ -331,13 +334,26 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick }) => {
                 <FormItem>
                   <FormLabel>Número de Corretores (Mínimo {MIN_AGENTS_CORRETORA})</FormLabel>
                   <FormControl>
-                    <Input 
-                        type="number" 
-                        placeholder="3" 
-                        {...field} 
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        min={MIN_AGENTS_CORRETORA}
-                    />
+                    <div className="flex items-center space-x-3">
+                        <Slider
+                            min={MIN_AGENTS_CORRETORA}
+                            max={20} // You can adjust the max value as needed
+                            step={1}
+                            value={[field.value]}
+                            onValueChange={(val) => field.onChange(val[0])}
+                            className="w-full"
+                            disabled={isSubmitting}
+                        />
+                        <Input
+                            type="number"
+                            value={field.value}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || MIN_AGENTS_CORRETORA)}
+                            className="w-20 text-center"
+                            min={MIN_AGENTS_CORRETORA}
+                            max={20}
+                            disabled={isSubmitting}
+                        />
+                    </div>
                   </FormControl>
                   <FormMessage className="text-destructive" />
                 </FormItem>
