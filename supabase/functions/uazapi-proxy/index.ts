@@ -1,7 +1,7 @@
 // @ts-nocheck
 // As importações de URL e referências de tipo são gerenciadas pelo ambiente Deno e não devem ser incluídas aqui para evitar erros de compilação local.
-// import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-// import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+// import { serve } from "https://deno.land/std@0.190.0/http/server.ts"; // REMOVIDO
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 // Para fins de tipagem local no VSCode, você pode adicionar:
 // declare const Deno: any;
@@ -104,7 +104,7 @@ async function callUazapi(
 }
 
 
-serve(async (req) => {
+Deno.serve(async (req) => { // ALTERADO: Usando Deno.serve
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
