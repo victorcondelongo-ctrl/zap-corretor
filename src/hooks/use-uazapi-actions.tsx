@@ -7,7 +7,7 @@ interface UseUazapiActionsResult {
   isConnecting: boolean;
   isDisconnecting: boolean;
   createInstance: () => Promise<void>;
-  connectInstance: () => Promise<UazapiConnectResponse | undefined>;
+  connectInstance: (phone?: string) => Promise<UazapiConnectResponse | undefined>; // Adicionado 'phone?: string'
   disconnectInstance: () => Promise<void>;
 }
 
@@ -32,11 +32,11 @@ export function useUazapiInstanceActions(refetchStatus: () => void): UseUazapiAc
     }
   };
 
-  const connectInstance = async (): Promise<UazapiConnectResponse | undefined> => {
+  const connectInstance = async (phone?: string): Promise<UazapiConnectResponse | undefined> => { // Adicionado 'phone?: string'
     setIsConnecting(true);
     const toastId = showLoading("Iniciando conexão...");
     try {
-      const response = await agentService.connectInstance();
+      const response = await agentService.connectInstance(phone); // Passando o phone para agentService
       
       if (response.qrcode_base64) {
         showSuccess("QR Code gerado. Escaneie para conectar.");

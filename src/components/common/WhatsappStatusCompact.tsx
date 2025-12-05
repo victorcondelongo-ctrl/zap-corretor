@@ -60,14 +60,19 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
     setConnectMethod(method);
     setIsConnectModalOpen(false); // Close method selection modal
 
-    const response = await connectInstance();
+    // A conexão real será feita em handleConnectWithPairCodePhone se for 'pair'
+    if (method === 'pair') {
+        // Abre o modal de input de telefone
+        return; 
+    }
     
-    if (response?.qrcode_base64 && method === 'qr') {
+    // Se for QR Code, chama connectInstance sem phone
+    const response = await connectInstance(); 
+    
+    if (response?.qrcode_base64) {
       setQrCodeData(response.qrcode_base64);
-    } else if (response?.pairingCode && method === 'pair') {
-      setPairCodeData(response.pairingCode);
     } else {
-      showError("Falha ao obter dados de conexão. Tente novamente.");
+      showError("Falha ao obter QR Code. Tente novamente.");
     }
   };
 
@@ -77,10 +82,11 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
       return;
     }
     setPairCodeData(null); // Clear previous pair code
-    const response = await connectInstance(); // This should ideally take phone as param
+    const response = await connectInstance(pairCodePhone); // Passando o phone!
     
     if (response?.pairingCode) {
       setPairCodeData(response.pairingCode);
+      setConnectMethod(null); // Close the pair code input modal
     } else {
       showError("Falha ao obter Pair Code. Tente novamente.");
     }
@@ -263,7 +269,7 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
             <Button variant="outline" onClick={() => handleConnectWithMethod('qr')}>
               <QrCode className="mr-2 h-4 w-4" /> Conectar com QR Code
             </Button>
-            <Button variant="outline" onClick={() => handleConnectWithMethod('pair')}>
+            <Button variant="outline" onClick={() => { setIsConnectModalOpen(false); setConnectMethod('pair'); }}> {/* Abre o modal de input de telefone */}
               <Phone className="mr-2 h-4 w-4" /> Conectar com Pair Code
             </Button>
           </div>
