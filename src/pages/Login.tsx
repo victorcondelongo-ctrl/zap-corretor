@@ -136,6 +136,14 @@ const Login: React.FC = () => {
   
   const [currentView, setCurrentView] = useState<View>(initialView);
 
+  // Helper for loading screen
+  const renderLoadingScreen = (message: string) => (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="ml-2">{message}</p>
+    </div>
+  );
+
   // Redirect if already logged in AND profile is loaded
   useEffect(() => {
     if (!sessionLoading && user && profile) {
@@ -159,19 +167,17 @@ const Login: React.FC = () => {
   }, [user, profile, sessionLoading, navigate]);
 
   // Handle loading states
-  if (sessionLoading || (user && !profile)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-2">
-            {sessionLoading ? "Verificando sessão..." : "Carregando perfil..."}
-        </p>
-      </div>
-    );
+  if (sessionLoading) {
+    return renderLoadingScreen("Verificando sessão...");
+  }
+
+  // If user exists but profile is still loading, show profile loading message
+  if (user && !profile) {
+    return renderLoadingScreen("Carregando perfil...");
   }
   
-  // If user and profile exist, the useEffect already redirected.
-  // If user is null, show the appropriate form based on currentView.
+  // If user is null (not logged in) or profile is loaded (and useEffect will redirect),
+  // show the appropriate form based on currentView.
   
   const renderForm = () => {
     switch (currentView) {

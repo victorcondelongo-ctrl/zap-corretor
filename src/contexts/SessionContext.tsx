@@ -61,11 +61,16 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
         const { data, error } = await supabase.auth.getUser();
         if (!isMounted) return;
 
-        if (error) {
-          console.error("[SessionContext] getUser() error", error);
+        // Treat as signed out if there's an error or no user data
+        if (error || !data?.user) {
+          console.warn("[SessionContext] No valid user, treating as signed out", error);
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+          return;
         }
 
-        const currentUser = data?.user ?? null;
+        const currentUser = data.user;
         console.log("[SessionContext] loadInitial() user =", currentUser);
         setUser(currentUser);
 
@@ -89,8 +94,17 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("[SessionContext] onAuthStateChange:", event, session);
-        if (event === "INITIAL_SESSION") return;
+        
+        // If INITIAL_SESSION and no user, treat as signed out
+        if (event === "INITIAL_SESSION" && !session?.user) {
+            console.log("[SessionContext] INITIAL_SESSION with no user, treating as signed out.");
+            setUser(null);
+            setProfile(null);
+            setLoading(false); // Ensure loading is false
+            return;
+        }
 
+        // For other events or if user exists in INITIAL_SESSION
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
