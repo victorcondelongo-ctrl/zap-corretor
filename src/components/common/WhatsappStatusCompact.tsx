@@ -179,9 +179,7 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
             onClick={(e) => e.stopPropagation()} // Prevent triggering onManageClick
           />
         </div>
-        <SecondaryButton size="sm" onClick={onManageClick} className="w-full mt-3">
-            <Settings className="h-3 w-3 mr-1" /> Gerenciar
-        </SecondaryButton>
+        {/* Removido o botão "Gerenciar" */}
       </div>
     );
   }
@@ -272,10 +270,7 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
               </DestructiveButton>
             )}
             
-            {/* Botão de configurações para a página completa */}
-            <SecondaryButton size="sm" onClick={onManageClick} className="w-full">
-                <Settings className="h-3 w-3 mr-1" /> Gerenciar
-            </SecondaryButton>
+            {/* Removido o botão "Gerenciar" */}
           </div>
         </>
       )}
