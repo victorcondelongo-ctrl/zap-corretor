@@ -95,8 +95,19 @@ async function callUazapi(
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`[callUazapi] Uazapi Error (${response.status}): ${errorText}`);
-    // Throw an error object that includes the status and the Uazapi's response body
-    throw { status: response.status, message: errorText };
+    // Attempt to parse the errorText as JSON to extract a more specific message
+    let errorMessage = errorText;
+    try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.response) { // Uazapi often returns a 'response' field with a message
+            errorMessage = errorJson.response;
+        } else if (errorJson.error) {
+            errorMessage = errorJson.error;
+        }
+    } catch (e) {
+        // Not a JSON error, use raw text
+    }
+    throw { status: response.status, message: errorMessage };
   }
 
   const responseData = await response.json();
@@ -305,12 +316,16 @@ Deno.serve(async (req) => {
         if (!instance_id || !instance_token) throw new Error("Instance not found. Please initialize first.");
         
         console.log("[uazapi-proxy] Attempting to connect instance.");
+        
+        // Determine the body based on whether a phone number is provided
+        const requestBodyForUazapi = phone ? { phone } : undefined;
+
         // 1. Chamar Uazapi para conectar
         uazapiResponse = await callUazapi(
           "/connect",
           "POST",
           "instance",
-          phone ? { phone } : undefined, // Pass phone if provided (for pairing code)
+          requestBodyForUazapi, // Pass the determined body
           instance_token,
         );
         
