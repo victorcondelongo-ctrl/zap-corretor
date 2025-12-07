@@ -1,8 +1,6 @@
-// ... (imports adicionados corretamente)
-
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSession } from "@/contexts/SessionContext";
+import { useSession } from "@/contexts/SessionContext"; // Importação corrigida
 import { agentService, UazapiConnectResponse } from "@/services/zapCorretor";
 import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
 import { Badge } from "@/components/ui/badge";
