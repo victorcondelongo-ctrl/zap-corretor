@@ -308,11 +308,13 @@ Deno.serve(async (req) => {
         
         console.log("[uazapi-proxy] Attempting to connect instance.");
         // 1. Chamar Uazapi para conectar
+        // Adiciona o DDI '55' se o telefone for fornecido para Pair Code
+        const uazapiPhone = phone ? `55${phone}` : undefined;
         uazapiResponse = await callUazapi(
           "/connect",
           "POST",
           "instance",
-          phone ? { phone } : undefined, // Pass phone if provided (for pairing code)
+          uazapiPhone ? { phone: uazapiPhone } : undefined, // Pass phone if provided (for pairing code)
           instance_token,
         );
         
