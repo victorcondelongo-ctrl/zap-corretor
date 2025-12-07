@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
     // 1. Fetch profile data (instance_name, instance_id, instance_token)
     const { data: profile, error: profileError } = await supabaseAdmin
         .from("profiles")
-        .select("id, email, instance_name, instance_id, instance_token, tenant_id")
+        .select("id, instance_name, instance_id, instance_token, tenant_id") // REMOVED 'email'
         .eq("id", user.id)
         .single();
 
@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
         throw new Error("User profile not found.");
     }
 
-    const { instance_name, instance_id, instance_token, tenant_id } = profile;
+    const { instance_name, instance_id, instance_token, tenant_id } = profile; // REMOVED 'email'
     let updated_at = new Date().toISOString();
     let uazapiResponse: any;
 
@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
         }
         
         // 1. Gerar nome da instância (usando a regra zapcro...)
-        const generatedInstanceName = instance_name || generateInstanceName(user.email || 'unknown');
+        const generatedInstanceName = instance_name || generateInstanceName(user.email || 'unknown'); // Use user.email
         console.log("[uazapi-proxy] Generated instance name:", generatedInstanceName);
         
         // 2. Chamar Uazapi para criar
