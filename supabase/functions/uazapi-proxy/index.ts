@@ -84,12 +84,15 @@ async function callUazapi(
 
   const url = `${UAZAPI_BASE_URL}${endpoint}`;
   
-  console.log(`[callUazapi] Calling ${method} ${url} with body:`, body);
+  // Ensure body is an empty object for POST/PUT if not provided, instead of undefined
+  const requestBody = (method === "POST" || method === "PUT") && !body ? "{}" : JSON.stringify(body);
+
+  console.log(`[callUazapi] Calling ${method} ${url} with body:`, requestBody);
 
   const response = await fetch(url, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined,
+    body: requestBody,
   });
 
   if (!response.ok) {
@@ -318,7 +321,8 @@ Deno.serve(async (req) => {
         console.log("[uazapi-proxy] Attempting to connect instance.");
         
         // Determine the body based on whether a phone number is provided
-        const requestBodyForUazapi = phone ? { phone } : undefined;
+        // If phone is provided, send { phone: "..." }, otherwise send an empty object for QR code
+        const requestBodyForUazapi = phone ? { phone } : {};
 
         // 1. Chamar Uazapi para conectar
         uazapiResponse = await callUazapi(
