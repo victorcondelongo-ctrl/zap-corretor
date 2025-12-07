@@ -210,7 +210,7 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
                         onClick={(e) => { e.stopPropagation(); refetchStatus(); }} 
                         disabled={isActionLoading || isLoadingStatus}
                     >
-                        {isLoadingStatus ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                        {isLoadingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -268,18 +268,10 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
               </DestructiveButton>
             )}
             
-            {/* Botão de configurações para a página completa - APENAS PARA AGENTES AUTÔNOMOS */}
-            {isAgentAutonomous && (
-                <SecondaryButton size="sm" onClick={onManageClick} className="w-full">
-                    <Settings className="h-3 w-3 mr-1" /> Gerenciar
-                </SecondaryButton>
-            )}
-            {/* Botão de configurações para a página completa - APENAS PARA ADMIN_TENANT */}
-            {!isAgentAutonomous && profile?.role === 'ADMIN_TENANT' && (
-                <SecondaryButton size="sm" onClick={onManageClick} className="w-full">
-                    <Settings className="h-3 w-3 mr-1" /> Gerenciar
-                </SecondaryButton>
-            )}
+            {/* Botão de configurações para a página completa */}
+            <SecondaryButton size="sm" onClick={onManageClick} className="w-full">
+                <Settings className="h-3 w-3 mr-1" /> Gerenciar
+            </SecondaryButton>
           </div>
         </>
       )}
@@ -315,7 +307,7 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <Input
-              placeholder="Ex: 11999999999 (DDD + Número)" // Placeholder ajustado
+              placeholder="Ex: 5511999999999"
               value={pairCodePhone}
               onChange={(e) => setPairCodePhone(e.target.value)}
             />
