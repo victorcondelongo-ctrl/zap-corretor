@@ -70,16 +70,24 @@ async function callUazapi(
   };
 
   if (tokenType === "admin") {
-    if (!UAZAPI_ADMIN_TOKEN) throw new Error("UAZAPI_ADMIN_TOKEN not configured.");
+    if (!UAZAPI_ADMIN_TOKEN) {
+        console.error("UAZAPI_ADMIN_TOKEN not configured.");
+        throw new Error("UAZAPI_ADMIN_TOKEN not configured.");
+    }
     headers["admintoken"] = UAZAPI_ADMIN_TOKEN;
+    console.log("[callUazapi] Using admin token.");
   } else if (tokenType === "instance") {
-    if (!instanceToken) throw new Error("Instance token missing.");
+    if (!instanceToken) {
+        console.error("Instance token missing for instance call.");
+        throw new Error("Instance token missing.");
+    }
     headers["token"] = instanceToken;
+    console.log("[callUazapi] Using instance token.");
   }
 
   const url = `${UAZAPI_BASE_URL}${endpoint}`;
   
-  console.log(`[Uazapi] Calling ${method} ${url}`);
+  console.log(`[callUazapi] Calling ${method} ${url} with body:`, body);
 
   const response = await fetch(url, {
     method,
@@ -89,11 +97,13 @@ async function callUazapi(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`Uazapi Error (${response.status}): ${errorText}`);
+    console.error(`[callUazapi] Uazapi Error (${response.status}): ${errorText}`);
     throw new Error(`Uazapi API failed with status ${response.status}: ${errorText}`);
   }
 
-  return response.json();
+  const responseData = await response.json();
+  console.log("[callUazapi] Uazapi Response:", responseData);
+  return responseData;
 }
 
 
@@ -104,6 +114,7 @@ Deno.serve(async (req) => {
 
   const user = await getAuthenticatedUser(req);
   if (!user) {
+    console.warn("[uazapi-proxy] Unauthorized: No authenticated user.");
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -116,17 +127,21 @@ Deno.serve(async (req) => {
   try {
     requestBody = await req.json();
   } catch (e) {
+    console.warn("[uazapi-proxy] No JSON body provided or invalid JSON.");
     // Ignore if body is empty for GET/DELETE requests
   }
   
   const { action, phone } = requestBody;
   
   if (!action) {
+      console.error("[uazapi-proxy] Missing required action in request body.");
       return new Response(JSON.stringify({ error: "Missing required action in request body." }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
   }
+
+  console.log(`[uazapi-proxy] Action: ${action} for user: ${user.id}`);
 
   try {
     // 1. Fetch profile data (instance_name, instance_id, instance_token)
@@ -136,8 +151,14 @@ Deno.serve(async (req) => {
         .eq("id", user.id)
         .single();
 
-    if (profileError) throw profileError;
-    if (!profile) throw new Error("User profile not found.");
+    if (profileError) {
+        console.error("[uazapi-proxy] Profile fetch error:", profileError);
+        throw profileError;
+    }
+    if (!profile) {
+        console.error("[uazapi-proxy] User profile not found for user:", user.id);
+        throw new Error("User profile not found.");
+    }
 
     const { instance_name, instance_id, instance_token, tenant_id } = profile;
     let updated_at = new Date().toISOString();
@@ -147,6 +168,7 @@ Deno.serve(async (req) => {
     switch (action) {
       case "create-instance": {
         if (instance_id || instance_token) {
+            console.warn("[uazapi-proxy] Attempted to create instance, but one already exists for user:", user.id);
             return new Response(JSON.stringify({ 
                 error: "Instance already exists", 
                 instance_id: instance_id 
@@ -158,6 +180,7 @@ Deno.serve(async (req) => {
         
         // 1. Gerar nome da instância (usando a regra zapcro...)
         const generatedInstanceName = instance_name || generateInstanceName(user.email || 'unknown');
+        console.log("[uazapi-proxy] Generated instance name:", generatedInstanceName);
         
         // 2. Chamar Uazapi para criar
         uazapiResponse = await callUazapi(
@@ -174,6 +197,7 @@ Deno.serve(async (req) => {
         const newToken = uazapiResponse.token;
 
         if (!newInstanceId || !newToken) {
+             console.error("[uazapi-proxy] UazAPI did not return instance ID or token on creation.");
              throw new Error("UazAPI did not return instance ID or token.");
         }
 
@@ -188,10 +212,14 @@ Deno.serve(async (req) => {
           })
           .eq("id", user.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+            console.error("[uazapi-proxy] Error updating profile with new instance data:", updateError);
+            throw updateError;
+        }
         
         // 4. Se for ADMIN_TENANT, configurar o webhook
-        if (profile.tenant_id) { // Assuming ADMIN_TENANT has a tenant_id
+        if (tenant_id) { // Assuming ADMIN_TENANT has a tenant_id
+            console.log("[uazapi-proxy] User has tenant_id, checking for n8n webhook configuration.");
             const { data: globalSettings, error: settingsError } = await supabaseAdmin
                 .from("global_settings")
                 .select("value")
@@ -199,13 +227,13 @@ Deno.serve(async (req) => {
                 .single();
 
             if (settingsError) {
-                console.warn("Could not fetch n8n_webhook_url from global_settings:", settingsError.message);
+                console.warn("[uazapi-proxy] Could not fetch n8n_webhook_url from global_settings:", settingsError.message);
             }
 
             const n8nWebhookUrl = globalSettings?.value;
 
             if (n8nWebhookUrl) {
-                console.log(`[Uazapi] Configuring webhook for instance ${newInstanceId} to ${n8nWebhookUrl}`);
+                console.log(`[uazapi-proxy] Configuring webhook for instance ${newInstanceId} to ${n8nWebhookUrl}`);
                 await callUazapi(
                     "/webhook",
                     "POST",
@@ -217,8 +245,9 @@ Deno.serve(async (req) => {
                     },
                     newToken
                 );
+                console.log("[uazapi-proxy] Webhook configured successfully.");
             } else {
-                console.warn("n8n_webhook_url not found in global_settings. Webhook not configured.");
+                console.warn("[uazapi-proxy] n8n_webhook_url not found in global_settings. Webhook not configured.");
             }
         }
 
@@ -235,6 +264,7 @@ Deno.serve(async (req) => {
       case "status": {
         // Se não houver instance_id ou instance_token no perfil, significa que não há instância criada na Uazapi
         if (!instance_id || !instance_token) {
+            console.log("[uazapi-proxy] No instance_id or instance_token found in profile, returning no_instance status.");
             return new Response(JSON.stringify({ hasInstance: false, status: "no_instance" }), {
                 status: 200,
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -276,6 +306,7 @@ Deno.serve(async (req) => {
       case "connect": {
         if (!instance_id || !instance_token) throw new Error("Instance not found. Please initialize first.");
         
+        console.log("[uazapi-proxy] Attempting to connect instance.");
         // 1. Chamar Uazapi para conectar
         uazapiResponse = await callUazapi(
           "/connect",
@@ -295,6 +326,7 @@ Deno.serve(async (req) => {
       case "disconnect": {
         if (!instance_id || !instance_token) throw new Error("Instance not found.");
 
+        console.log("[uazapi-proxy] Attempting to disconnect instance.");
         // 1. Chamar Uazapi para desconectar
         uazapiResponse = await callUazapi(
           "/disconnect",
@@ -314,7 +346,10 @@ Deno.serve(async (req) => {
             })
             .eq("id", user.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+            console.error("[uazapi-proxy] Error updating profile after disconnect:", updateError);
+            throw updateError;
+        }
 
         return new Response(JSON.stringify({ message: "Disconnected successfully", raw: uazapiResponse }), {
           status: 200,
@@ -325,6 +360,7 @@ Deno.serve(async (req) => {
       case "pause": {
         if (!instance_id || !instance_token) throw new Error("Instance not found.");
 
+        console.log("[uazapi-proxy] Attempting to pause instance.");
         uazapiResponse = await callUazapi(
           "/pause",
           "POST",
@@ -342,6 +378,7 @@ Deno.serve(async (req) => {
       case "delete": {
         if (!instance_id || !instance_token) throw new Error("Instance not found.");
 
+        console.log("[uazapi-proxy] Attempting to delete instance.");
         // 1. Chamar Uazapi para deletar
         uazapiResponse = await callUazapi(
           "/delete",
@@ -362,7 +399,10 @@ Deno.serve(async (req) => {
             })
             .eq("id", user.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+            console.error("[uazapi-proxy] Error updating profile after delete:", updateError);
+            throw updateError;
+        }
 
         return new Response(JSON.stringify({ message: "Instance deleted successfully", raw: uazapiResponse }), {
           status: 200,
@@ -371,13 +411,14 @@ Deno.serve(async (req) => {
       }
 
       default:
+        console.warn("[uazapi-proxy] Invalid action specified:", action);
         return new Response(JSON.stringify({ error: "Invalid action specified" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
     }
   } catch (error) {
-    console.error("Edge Function Error:", error);
+    console.error("[uazapi-proxy] General error caught:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
