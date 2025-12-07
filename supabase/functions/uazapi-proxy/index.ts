@@ -32,13 +32,10 @@ async function getAuthenticatedUser(req: Request) {
 
   const supabaseAdmin = createSupabaseAdminClient();
 
-  if (authHeader && authHeader.startsWith("Bearer eyJhbGciOiJIUzI1NiIsIml")) { // Check if it's a JWT (anon key)
+  if (authHeader && authHeader.startsWith("Bearer ")) { // Check if it's a JWT
     const token = authHeader.replace("Bearer ", "");
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-    );
-    const { data: { user } = {} } = await supabase.auth.getUser(token);
+    // Use the admin client to verify the token and get the user
+    const { data: { user } = {} } = await supabaseAdmin.auth.getUser(token);
     return user;
   } else if (authHeader && authHeader.startsWith(`Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`) && userIdHeader) {
     // Internal call from another Edge Function using service role key

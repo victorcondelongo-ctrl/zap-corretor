@@ -82,7 +82,7 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
       return;
     }
     setPairCodeData(null); // Clear previous pair code
-    const response = await connectInstance(pairCodePhone); // Passando o phone!
+    const response = await connectInstance(pairCodePhone); // Passando o phone para agentService
     
     if (response?.pairingCode) {
       setPairCodeData(response.pairingCode);
@@ -223,6 +223,10 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
       {isLoadingStatus ? (
         <div className="flex items-center text-xs text-muted-foreground">
           <Loader2 className="h-3 w-3 animate-spin mr-1" /> Carregando...
+        </div>
+      ) : errorStatus ? (
+        <div className="text-xs text-destructive mb-2">
+          Erro: {errorStatus}
         </div>
       ) : (
         <>
