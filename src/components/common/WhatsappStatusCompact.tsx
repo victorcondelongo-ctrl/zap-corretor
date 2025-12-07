@@ -1,30 +1,25 @@
-import React, { useState, useMemo } from "react";
+// ... (imports adicionados corretamente)
+
+import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSession } from "@/contexts/SessionContext";
+import { agentService, UazapiConnectResponse } from "@/services/zapCorretor";
+import { showError, showSuccess, showLoading, dismissToast } from "@/utils/toast";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { PrimaryButton, DestructiveButton, SecondaryButton } from "@/components/ui/CustomButton";
+import { CheckCircle, XCircle, Clock, Zap, Phone, QrCode, RefreshCw, Loader2 } from "lucide-react";
 import { useUazapiInstanceStatus } from "@/hooks/use-uazapi-status";
 import { useUazapiInstanceActions } from "@/hooks/use-uazapi-actions";
-import { Loader2, Zap, CheckCircle, XCircle, QrCode, Clock, RefreshCw, Phone, Power, Settings } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
-import { PrimaryButton, DestructiveButton, SecondaryButton } from "@/components/ui/CustomButton";
-import { useSession } from "@/contexts/SessionContext";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
-import { agentService } from "@/services/zapCorretor";
-import { useNavigate } from "react-router-dom";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 
 interface WhatsappStatusCompactProps {
-  isAgentAutonomous: boolean; // True for independent agents (AGENT with tenant_id = null)
-  onManageClick: () => void; // Callback to navigate to the full settings page
+  isAgentAutonomous: boolean;
+  onManageClick: () => void;
 }
 
 const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAutonomous, onManageClick }) => {
@@ -108,7 +103,7 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
         return { text: "Desconectado", variant: "destructive", icon: XCircle, tooltip: "WhatsApp desconectado. Requer reconexão." };
       case 'waiting_qr':
       case 'waiting_pair':
-        return { text: "Aguardando Conexão", variant: "warning", icon: QrCode, tooltip: "Aguardando leitura do QR Code ou Pair Code." };
+        return { text: "Conexão em Andamento", variant: "warning", icon: Clock, tooltip: "Conexão em progresso. Aguarde 2 minutos." };
       case 'created':
         return { text: "Instância Criada", variant: "default", icon: Zap, tooltip: "Instância Uazapi criada, mas não conectada ao WhatsApp." };
       case 'no_instance':
@@ -129,7 +124,7 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
   const [whatsappAlertNumber, setWhatsappAlertNumber] = useState(profile?.whatsapp_alert_number || "");
 
   // Update local state when profile changes
-  React.useEffect(() => {
+  useEffect(() => {
     setIsAlertsEnabled(profile?.schedule_enabled ?? false);
     setWhatsappAlertNumber(profile?.whatsapp_alert_number || "");
   }, [profile]);
@@ -256,11 +251,21 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
               </PrimaryButton>
             )}
             
-            {/* Botões de Conectar/Mostrar QR/Pair Code aparecem se houver instância mas não estiver conectado */}
-            {(statusData?.status === 'disconnected' || statusData?.status === 'created' || statusData?.status === 'waiting_qr' || statusData?.status === 'waiting_pair') && statusData.hasInstance && (
+            {/* Botões de Conectar aparecem APENAS se houver instância mas NÃO estiver em progresso de conexão */}
+            {(statusData?.status === 'disconnected' || statusData?.status === 'created') && statusData.hasInstance && (
               <PrimaryButton size="sm" onClick={(e) => { e.stopPropagation(); handleConnect(); }} disabled={isActionLoading}>
                 {isConnecting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : "Conectar WhatsApp"}
               </PrimaryButton>
+            )}
+            
+            {/* Se estiver em progresso de conexão (waiting_qr ou waiting_pair), mostrar mensagem e botão de cancelar */}
+            {(statusData?.status === 'waiting_qr' || statusData?.status === 'waiting_pair') && statusData.hasInstance && (
+              <div className="text-center space-y-2">
+                <p className="text-xs text-warning">Conexão em andamento. Aguarde 2 minutos...</p>
+                <SecondaryButton size="sm" onClick={(e) => { e.stopPropagation(); handleDisconnect(); }} disabled={isActionLoading}>
+                  Cancelar Conexão
+                </SecondaryButton>
+              </div>
             )}
             
             {/* Botão de Desconectar aparece se estiver conectado */}
