@@ -274,6 +274,12 @@ const WhatsappStatusCompact: React.FC<WhatsappStatusCompactProps> = ({ isAgentAu
                     <Settings className="h-3 w-3 mr-1" /> Gerenciar
                 </SecondaryButton>
             )}
+            {/* Botão de configurações para a página completa - APENAS PARA ADMIN_TENANT */}
+            {!isAgentAutonomous && profile?.role === 'ADMIN_TENANT' && (
+                <SecondaryButton size="sm" onClick={onManageClick} className="w-full">
+                    <Settings className="h-3 w-3 mr-1" /> Gerenciar
+                </SecondaryButton>
+            )}
           </div>
         </>
       )}
