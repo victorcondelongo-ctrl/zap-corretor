@@ -95,7 +95,8 @@ async function callUazapi(
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`[callUazapi] Uazapi Error (${response.status}): ${errorText}`);
-    throw new Error(`Uazapi API failed with status ${response.status}: ${errorText}`);
+    // Throw an error object that includes the status and the Uazapi's response body
+    throw { status: response.status, message: errorText };
   }
 
   const responseData = await response.json();
@@ -144,7 +145,7 @@ Deno.serve(async (req) => {
     // 1. Fetch profile data (instance_name, instance_id, instance_token)
     const { data: profile, error: profileError } = await supabaseAdmin
         .from("profiles")
-        .select("id, instance_name, instance_id, instance_token, tenant_id") // REMOVED 'email'
+        .select("id, instance_name, instance_id, instance_token, tenant_id")
         .eq("id", user.id)
         .single();
 
@@ -157,7 +158,7 @@ Deno.serve(async (req) => {
         throw new Error("User profile not found.");
     }
 
-    const { instance_name, instance_id, instance_token, tenant_id } = profile; // REMOVED 'email'
+    const { instance_name, instance_id, instance_token, tenant_id } = profile;
     let updated_at = new Date().toISOString();
     let uazapiResponse: any;
 
@@ -176,7 +177,7 @@ Deno.serve(async (req) => {
         }
         
         // 1. Gerar nome da instância (usando a regra zapcro...)
-        const generatedInstanceName = instance_name || generateInstanceName(user.email || 'unknown'); // Use user.email
+        const generatedInstanceName = instance_name || generateInstanceName(user.email || 'unknown');
         console.log("[uazapi-proxy] Generated instance name:", generatedInstanceName);
         
         // 2. Chamar Uazapi para criar
@@ -416,6 +417,13 @@ Deno.serve(async (req) => {
     }
   } catch (error) {
     console.error("[uazapi-proxy] General error caught:", error);
+    // Check if the error is the custom error object we threw from callUazapi
+    if (error.status && error.message) {
+        return new Response(JSON.stringify({ error: error.message }), {
+            status: error.status, // Use the status from the Uazapi error
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+    }
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

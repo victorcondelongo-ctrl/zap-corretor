@@ -50,7 +50,19 @@ export function useUazapiInstanceActions(refetchStatus: () => void): UseUazapiAc
       return response;
     } catch (error) {
       console.error("Connect instance error:", error);
-      showError(error instanceof Error ? error.message : "Falha ao iniciar a conexão.");
+      // Attempt to parse the error message from the Edge Function
+      let errorMessage = "Falha ao iniciar a conexão.";
+      if (error instanceof Error) {
+          try {
+              const errorBody = JSON.parse(error.message);
+              if (errorBody.error) {
+                  errorMessage = errorBody.error;
+              }
+          } catch (parseError) {
+              errorMessage = error.message;
+          }
+      }
+      showError(errorMessage);
     } finally {
       dismissToast(toastId);
       setIsConnecting(false);
